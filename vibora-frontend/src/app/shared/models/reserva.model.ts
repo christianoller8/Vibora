@@ -1,0 +1,31 @@
+export type EstadoReserva = 'CONFIRMADA' | 'CANCELADA';
+
+export interface Reserva {
+  id: number;
+  pistaId: number;
+  pistaNombre: string;
+  clubId: number;
+  clubNombre: string;
+  /** Instante ISO-8601 (UTC). */
+  inicio: string;
+  fin: string;
+  estado: EstadoReserva;
+  precioTotal: number;
+  /** true si es un partido abierto: otros jugadores pueden apuntarse. */
+  abierta: boolean;
+  /** Jugadores apuntados (el organizador cuenta), de 4. */
+  jugadores: number;
+  cuotaPorJugador: number;
+}
+
+/** Casilla de la agenda de una pista; precio es null si ninguna tarifa la cubre. */
+export interface CasillaAgenda {
+  inicio: string;
+  fin: string;
+  disponible: boolean;
+  precio: number | null;
+}
+
+export interface ReservaRequest {
+  inicio: string;
+}

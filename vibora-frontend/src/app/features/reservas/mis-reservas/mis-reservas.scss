@@ -1,0 +1,88 @@
+h1 {
+  margin: 0 0 1.5rem;
+  font: var(--mat-sys-headline-medium);
+}
+
+.reservas {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reserva {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+
+  &.cancelada {
+    opacity: 0.7;
+  }
+
+  .datos {
+    display: flex;
+    flex: 1 1 14rem;
+    flex-direction: column;
+  }
+
+  .pista {
+    font: var(--mat-sys-title-medium);
+  }
+
+  .fecha {
+    &::first-letter {
+      text-transform: uppercase;
+    }
+  }
+
+  .fecha,
+  .hora {
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .precio {
+    font-weight: 500;
+  }
+}
+
+.partido {
+  display: flex;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+
+  .jugadores {
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.chip {
+  padding: 0.125rem 0.75rem;
+  border-radius: 999px;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+  font: var(--mat-sys-label-large);
+
+  &.chip-cancelada {
+    background: var(--mat-sys-surface-container-highest);
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.vacio {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.error {
+  color: var(--mat-sys-error);
+}

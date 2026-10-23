@@ -1,0 +1,63 @@
+<h1>Agenda de reservas</h1>
+
+@if (cargandoClubes()) {
+  <mat-spinner diameter="40" aria-label="Cargando clubes" />
+} @else if (clubes().length === 0 && !errorCarga()) {
+  <p class="vacio">
+    Todavía no hay clubes disponibles. Cuando un club se dé de alta podrás reservar sus pistas desde
+    aquí.
+  </p>
+} @else {
+  <div class="filtros">
+    <mat-form-field appearance="outline">
+      <mat-label>Club</mat-label>
+      <select matNativeControl [formControl]="clubCtrl">
+        @for (club of clubes(); track club.id) {
+          <option [ngValue]="club.id">{{ club.nombre }}</option>
+        }
+      </select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Pista</mat-label>
+      <select matNativeControl [formControl]="pistaCtrl">
+        @for (pista of pistas(); track pista.id) {
+          <option [ngValue]="pista.id">{{ pista.nombre }}</option>
+        }
+      </select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Fecha</mat-label>
+      <input matInput type="date" [formControl]="fechaCtrl" [min]="minFecha" />
+    </mat-form-field>
+  </div>
+
+  @if (errorCarga(); as mensaje) {
+    <p class="error" role="alert">{{ mensaje }}</p>
+  }
+
+  @if (clubId() !== null && !cargandoPistas() && pistas().length === 0 && !errorCarga()) {
+    <p class="vacio">Este club todavía no tiene pistas para reservar.</p>
+  } @else if (cargandoAgenda() || cargandoPistas()) {
+    <mat-spinner diameter="40" aria-label="Cargando agenda" />
+  } @else if (pistaId() !== null && casillas().length === 0 && !errorCarga()) {
+    <p class="vacio">No hay casillas para este día.</p>
+  } @else {
+    <div class="casillas">
+      @for (casilla of casillas(); track casilla.inicio) {
+        <button
+          type="button"
+          class="casilla"
+          [class.disponible]="esReservable(casilla)"
+          [disabled]="!esReservable(casilla) || reservando()"
+          (click)="reservar(casilla)"
+        >
+          <span class="hora">{{ formatearRango(casilla.inicio, casilla.fin) }}</span>
+          <span class="precio">{{ formatearPrecio(casilla.precio) }}</span>
+          <span class="estado">{{ estado(casilla) }}</span>
+        </button>
+      }
+    </div>
+  }
+}

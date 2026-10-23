@@ -1,0 +1,24 @@
+<h2 mat-dialog-title>{{ datos.titulo }}</h2>
+
+<mat-dialog-content>
+  @if (datos.mensaje) {
+    <p class="mensaje">{{ datos.mensaje }}</p>
+  }
+  @if (datos.lineas?.length) {
+    <dl class="lineas">
+      @for (linea of datos.lineas; track linea.etiqueta) {
+        <dt>{{ linea.etiqueta }}</dt>
+        <dd>{{ linea.valor }}</dd>
+      }
+    </dl>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" data-accion="cancelar" (click)="cerrar(false)">
+    {{ datos.textoCancelar ?? 'Volver' }}
+  </button>
+  <button mat-flat-button type="button" data-accion="confirmar" (click)="cerrar(true)">
+    {{ datos.textoConfirmar }}
+  </button>
+</mat-dialog-actions>

@@ -1,0 +1,55 @@
+<h1>Mis reservas</h1>
+
+@if (cargando()) {
+  <mat-spinner diameter="40" aria-label="Cargando reservas" />
+} @else if (error(); as mensaje) {
+  <p class="error" role="alert">{{ mensaje }}</p>
+} @else if (reservas().length === 0) {
+  <p class="vacio">
+    Todavía no tienes reservas. Elige una casilla libre en la agenda para empezar.
+  </p>
+} @else {
+  <ul class="reservas">
+    @for (reserva of reservas(); track reserva.id) {
+      <li class="reserva" [class.cancelada]="reserva.estado === 'CANCELADA'">
+        <div class="datos">
+          <span class="pista">{{ reserva.clubNombre }} · {{ reserva.pistaNombre }}</span>
+          <span class="fecha">{{ formatearFecha(reserva.inicio) }}</span>
+          <span class="hora">{{ formatearRango(reserva.inicio, reserva.fin) }}</span>
+        </div>
+        <span class="precio">{{ formatearPrecio(reserva.precioTotal) }}</span>
+        <span class="chip" [class.chip-cancelada]="reserva.estado === 'CANCELADA'">
+          {{ etiquetaEstado(reserva) }}
+        </span>
+        @if (reserva.estado === 'CONFIRMADA') {
+          <div class="partido">
+            <span class="jugadores">
+              Jugadores: {{ reserva.jugadores }}/{{ jugadoresPorPartido }} · Tu cuota por jugador:
+              {{ formatearPrecio(reserva.cuotaPorJugador) }}
+            </span>
+            @if (puedeAbrir(reserva)) {
+              <mat-slide-toggle
+                [checked]="reserva.abierta"
+                [disabled]="cambiando().has(reserva.id)"
+                (change)="alternarAbierta(reserva, $event)"
+              >
+                Partido abierto
+              </mat-slide-toggle>
+            }
+          </div>
+        }
+        @if (puedeCancelar(reserva)) {
+          <button
+            mat-stroked-button
+            type="button"
+            data-accion="cancelar"
+            [disabled]="cancelando()"
+            (click)="cancelar(reserva)"
+          >
+            Cancelar
+          </button>
+        }
+      </li>
+    }
+  </ul>
+}
