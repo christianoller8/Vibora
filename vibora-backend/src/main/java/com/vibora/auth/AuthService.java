@@ -59,7 +59,7 @@ public class AuthService {
 
 	@Transactional(readOnly = true)
 	public UsuarioResumen perfil(String email) {
-		return usuarios.findByEmail(email)
+		return usuarios.findConClubByEmail(email)
 				.filter(Usuario::isActivo)
 				.map(UsuarioResumen::de)
 				.orElseThrow(CredencialesInvalidasException::new);

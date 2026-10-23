@@ -43,6 +43,7 @@ class AuthControllerTests extends PostgresTestBase {
 	@Autowired ClubRepository clubs;
 	@Autowired PasswordEncoder passwordEncoder;
 	@Autowired JwtService jwtService;
+	@jakarta.persistence.PersistenceContext jakarta.persistence.EntityManager em;
 	@Value("${vibora.jwt.secret}") String secret;
 
 	private String registroJson(String email, String password, String nombre, String apellidos) {
@@ -215,6 +216,60 @@ class AuthControllerTests extends PostgresTestBase {
 				.andExpect(jsonPath("$.email").value("ana@vibora.com"))
 				.andExpect(jsonPath("$.rol").value("JUGADOR"))
 				.andExpect(jsonPath("$.passwordHash").doesNotExist());
+	}
+
+	@Test
+	void me_jugador_exponeClubNulo() throws Exception {
+		crearUsuario("ana@vibora.com", Rol.JUGADOR, null, true);
+
+		String cuerpo = mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + tokenDe("ana@vibora.com")))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.clubId").value(org.hamcrest.Matchers.nullValue()))
+				.andExpect(jsonPath("$.clubNombre").value(org.hamcrest.Matchers.nullValue()))
+				.andReturn().getResponse().getContentAsString();
+		assertThat(cuerpo).contains("\"clubId\":null").contains("\"clubNombre\":null");
+	}
+
+	@Test
+	void me_adminYPersonal_exponenSuClub() throws Exception {
+		Club club = clubs.saveAndFlush(TestData.club());
+		crearUsuario("admin@vibora.com", Rol.ADMIN_CLUB, club, true);
+		crearUsuario("monitor@vibora.com", Rol.MONITOR, club, true);
+
+		for (String email : new String[] {"admin@vibora.com", "monitor@vibora.com"}) {
+			mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + tokenDe(email)))
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("$.clubId").value(club.getId().intValue()))
+					.andExpect(jsonPath("$.clubNombre").value(club.getNombre()));
+		}
+	}
+
+	@Test
+	void me_noProvocaCargasPerezosasAdicionales() throws Exception {
+		// Con un club asociado, /me no debe depender de una segunda consulta para el nombre del club
+		Club club = clubs.saveAndFlush(TestData.club());
+		crearUsuario("admin@vibora.com", Rol.ADMIN_CLUB, club, true);
+		String token = tokenDe("admin@vibora.com");
+		em.flush();
+		em.clear();
+		var stats = em.getEntityManagerFactory().unwrap(org.hibernate.SessionFactory.class).getStatistics();
+		stats.setStatisticsEnabled(true);
+		stats.clear();
+
+		mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + token)).andExpect(status().isOk());
+
+		// el filtro JWT no consulta; perfil() debe resolver usuario+club en UNA sola sentencia
+		assertThat(stats.getPrepareStatementCount()).isEqualTo(1);
+		stats.setStatisticsEnabled(false);
+	}
+
+	@Test
+	void registro_exponeClubNulo() throws Exception {
+		String cuerpo = mvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON)
+						.content(registroJson("nuevo@vibora.com", PASSWORD, "Ana", "García")))
+				.andExpect(status().isCreated())
+				.andReturn().getResponse().getContentAsString();
+		assertThat(cuerpo).contains("\"clubId\":null").contains("\"clubNombre\":null");
 	}
 
 	@Test
