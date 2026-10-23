@@ -1,0 +1,86 @@
+<div class="cabecera">
+  <h2>Reservas del día</h2>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>Fecha</mat-label>
+    <input matInput type="date" name="fecha" [formControl]="fechaCtrl" />
+  </mat-form-field>
+</div>
+
+@if (cargando()) {
+  <mat-spinner diameter="40" aria-label="Cargando reservas" />
+} @else if (error(); as mensaje) {
+  <p class="error" role="alert">{{ mensaje }}</p>
+  <button mat-stroked-button type="button" data-accion="reintentar" (click)="recargar()">
+    Reintentar
+  </button>
+} @else if (reservas().length === 0) {
+  <p class="vacio">No hay reservas en el club para este día.</p>
+} @else {
+  <div class="tabla">
+    <table mat-table [dataSource]="ordenadas()" aria-label="Reservas del club en la fecha elegida">
+      <ng-container matColumnDef="hora">
+        <th mat-header-cell *matHeaderCellDef>Hora</th>
+        <td mat-cell *matCellDef="let reserva">
+          {{ formatearRango(reserva.inicio, reserva.fin) }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="pista">
+        <th mat-header-cell *matHeaderCellDef>Pista</th>
+        <td mat-cell *matCellDef="let reserva">{{ reserva.pistaNombre }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="jugador">
+        <th mat-header-cell *matHeaderCellDef>Jugador</th>
+        <td mat-cell *matCellDef="let reserva">
+          <span class="jugador">{{ nombreJugador(reserva) }}</span>
+          <span class="email">{{ reserva.usuario.email }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="estado">
+        <th mat-header-cell *matHeaderCellDef>Estado</th>
+        <td mat-cell *matCellDef="let reserva">
+          <mat-chip-set aria-label="Estado de la reserva">
+            <mat-chip class="estado" [class.cancelada]="reserva.estado === 'CANCELADA'">{{
+              etiquetaEstado(reserva)
+            }}</mat-chip>
+          </mat-chip-set>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="precio">
+        <th mat-header-cell *matHeaderCellDef>Precio</th>
+        <td mat-cell *matCellDef="let reserva">{{ formatearPrecio(reserva.precioTotal) }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef><span class="oculto">Acciones</span></th>
+        <td mat-cell *matCellDef="let reserva" class="acciones">
+          @if (puedeCancelar(reserva)) {
+            <button
+              mat-stroked-button
+              type="button"
+              data-accion="cancelar"
+              [attr.aria-label]="
+                'Cancelar la reserva de ' + nombreJugador(reserva) + ' en ' + reserva.pistaNombre
+              "
+              [disabled]="cancelando()"
+              (click)="cancelar(reserva)"
+            >
+              Cancelar
+            </button>
+          }
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+      <tr
+        mat-row
+        *matRowDef="let reserva; columns: columnas"
+        class="reserva"
+        [class.anulada]="reserva.estado === 'CANCELADA'"
+      ></tr>
+    </table>
+  </div>
+}

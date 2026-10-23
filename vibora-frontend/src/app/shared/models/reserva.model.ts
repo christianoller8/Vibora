@@ -18,6 +18,25 @@ export interface Reserva {
   cuotaPorJugador: number;
 }
 
+/** Reserva vista por el administrador del club, con un resumen de quien reservó. */
+export interface ReservaClub {
+  id: number;
+  pistaId: number;
+  pistaNombre: string;
+  inicio: string;
+  fin: string;
+  estado: EstadoReserva;
+  precioTotal: number;
+  usuario: UsuarioReserva;
+}
+
+export interface UsuarioReserva {
+  id: number;
+  nombre: string | null;
+  apellidos: string;
+  email: string;
+}
+
 /** Casilla de la agenda de una pista; precio es null si ninguna tarifa la cubre. */
 export interface CasillaAgenda {
   inicio: string;

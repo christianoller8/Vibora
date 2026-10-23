@@ -1,0 +1,79 @@
+<h2 mat-dialog-title>{{ edicion ? 'Editar tarifa' : 'Nueva tarifa' }}</h2>
+
+<form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+  <mat-dialog-content>
+    <mat-form-field appearance="outline">
+      <mat-label>Día de la semana</mat-label>
+      <select matNativeControl name="diaSemana" formControlName="diaSemana">
+        @for (dia of dias; track dia) {
+          <option [value]="dia">{{ etiquetaDia[dia] }}</option>
+        }
+      </select>
+    </mat-form-field>
+
+    <div class="horario">
+      <mat-form-field appearance="outline">
+        <mat-label>Desde</mat-label>
+        <input matInput type="time" name="horaInicio" formControlName="horaInicio" />
+        <mat-error>La hora de inicio es obligatoria</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Hasta</mat-label>
+        <input
+          matInput
+          type="time"
+          name="horaFin"
+          formControlName="horaFin"
+          [errorStateMatcher]="matcherFin"
+        />
+        @if (form.hasError('rangoHoras')) {
+          <mat-error>La hora de fin debe ser posterior a la de inicio</mat-error>
+        } @else {
+          <mat-error>La hora de fin es obligatoria</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Precio por hora (€)</mat-label>
+      <input
+        matInput
+        type="number"
+        name="precioHora"
+        formControlName="precioHora"
+        step="0.01"
+        min="0"
+      />
+      @if (form.controls.precioHora.hasError('min')) {
+        <mat-error>El precio no puede ser negativo</mat-error>
+      } @else if (form.controls.precioHora.hasError('max')) {
+        <mat-error>El precio es demasiado alto</mat-error>
+      } @else if (form.controls.precioHora.hasError('decimales')) {
+        <mat-error>Usa como máximo dos decimales</mat-error>
+      } @else {
+        <mat-error>El precio es obligatorio</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Tipo de tarifa</mat-label>
+      <select matNativeControl name="tipo" formControlName="tipo">
+        @for (tipo of tipos; track tipo) {
+          <option [value]="tipo">{{ etiquetaTipo[tipo] }}</option>
+        }
+      </select>
+    </mat-form-field>
+
+    @if (error(); as mensaje) {
+      <p class="error" role="alert">{{ mensaje }}</p>
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" data-accion="cancelar" (click)="cancelar()">Cancelar</button>
+    <button mat-flat-button type="submit" [disabled]="form.invalid || guardando()">
+      {{ guardando() ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </mat-dialog-actions>
+</form>

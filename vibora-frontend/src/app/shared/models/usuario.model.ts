@@ -6,6 +6,9 @@ export interface Usuario {
   nombre: string | null;
   apellidos: string;
   rol: Rol;
+  /** Club al que pertenece (null para un jugador sin club). */
+  clubId: number | null;
+  clubNombre: string | null;
 }
 
 export interface LoginRequest {

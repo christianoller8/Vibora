@@ -1,0 +1,59 @@
+<div class="cabecera">
+  <h2>Tarifas</h2>
+  <button mat-flat-button type="button" data-accion="nueva" (click)="nueva()">
+    <mat-icon>add</mat-icon>
+    Nueva tarifa
+  </button>
+</div>
+
+@if (cargando()) {
+  <mat-spinner diameter="40" aria-label="Cargando tarifas" />
+} @else if (error(); as mensaje) {
+  <p class="error" role="alert">{{ mensaje }}</p>
+  <button mat-stroked-button type="button" data-accion="reintentar" (click)="cargar()">
+    Reintentar
+  </button>
+} @else if (dias().length === 0) {
+  <p class="vacio">
+    Todavía no hay tarifas. Las casillas que no cubra ninguna tarifa no se pueden reservar, así que
+    crea al menos una franja para cada día en el que abra el club.
+  </p>
+} @else {
+  @for (grupo of dias(); track grupo.dia) {
+    <section class="dia" [attr.aria-label]="'Tarifas del ' + grupo.etiqueta.toLowerCase()">
+      <h3>{{ grupo.etiqueta }}</h3>
+      <ul class="franjas">
+        @for (franja of grupo.franjas; track franja.id) {
+          <li class="franja">
+            <span class="horario">{{ horario(franja) }}</span>
+            <span class="precio">{{ formatearPrecio(franja.precioHora) }}/h</span>
+            <mat-chip-set aria-label="Tipo de tarifa">
+              <mat-chip class="tipo">{{ etiquetaTipo[franja.tipo] }}</mat-chip>
+            </mat-chip-set>
+            <span class="acciones">
+              <button
+                mat-icon-button
+                type="button"
+                data-accion="editar"
+                [attr.aria-label]="'Editar ' + descripcion(franja)"
+                (click)="editar(franja)"
+              >
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button
+                mat-icon-button
+                type="button"
+                data-accion="eliminar"
+                [attr.aria-label]="'Eliminar ' + descripcion(franja)"
+                [disabled]="eliminando() !== null"
+                (click)="eliminar(franja)"
+              >
+                <mat-icon>delete</mat-icon>
+              </button>
+            </span>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+}

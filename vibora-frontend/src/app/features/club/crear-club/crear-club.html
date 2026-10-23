@@ -1,0 +1,11 @@
+<h1>Crear mi club</h1>
+<p class="intro">
+  Da de alta tu club y serás su administrador: podrás gestionar sus pistas, tarifas y reservas.
+</p>
+
+<app-club-formulario
+  textoEnviar="Crear club"
+  [enviando]="enviando()"
+  [error]="error()"
+  (enviar)="crear($event)"
+/>

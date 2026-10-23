@@ -2,7 +2,13 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
-import { USUARIO_JUGADOR, crearJwt, segundosDesdeAhora } from '../../testing/test-utils';
+import { Usuario } from '../../shared/models/usuario.model';
+import {
+  USUARIO_ADMIN,
+  USUARIO_JUGADOR,
+  crearJwt,
+  segundosDesdeAhora,
+} from '../../testing/test-utils';
 import { AuthService, CLAVE_TOKEN } from './auth.service';
 
 describe('AuthService', () => {
@@ -72,6 +78,61 @@ describe('AuthService', () => {
       await expect(resultado).rejects.toMatchObject({ status: 500 });
       expect(auth.estaAutenticado()).toBe(false);
       expect(localStorage.getItem(CLAVE_TOKEN)).toBeNull();
+    });
+  });
+
+  describe('club del usuario', () => {
+    async function conUsuario(usuario: Usuario): Promise<AuthService> {
+      localStorage.setItem(CLAVE_TOKEN, crearJwt(segundosDesdeAhora(3600)));
+      const auth = crearServicio();
+      const carga = firstValueFrom(auth.cargarUsuario());
+      http.expectOne('/api/auth/me').flush(usuario);
+      await carga;
+      return auth;
+    }
+
+    it('sin sesión no hay club ni permisos de administrador', () => {
+      const auth = crearServicio();
+
+      expect(auth.clubId()).toBeNull();
+      expect(auth.clubNombre()).toBeNull();
+      expect(auth.esAdminClub()).toBe(false);
+      expect(auth.puedeCrearClub()).toBe(false);
+    });
+
+    it('un administrador expone el id y el nombre de su club', async () => {
+      const auth = await conUsuario(USUARIO_ADMIN);
+
+      expect(auth.clubId()).toBe(5);
+      expect(auth.clubNombre()).toBe('Club Víbora Demo');
+      expect(auth.esAdminClub()).toBe(true);
+      expect(auth.puedeCrearClub()).toBe(false);
+    });
+
+    it('un jugador sin club puede crear el suyo y no es administrador', async () => {
+      const auth = await conUsuario(USUARIO_JUGADOR);
+
+      expect(auth.clubId()).toBeNull();
+      expect(auth.clubNombre()).toBeNull();
+      expect(auth.esAdminClub()).toBe(false);
+      expect(auth.puedeCrearClub()).toBe(true);
+    });
+
+    it('un monitor de un club no es administrador ni puede crear otro club', async () => {
+      const auth = await conUsuario({ ...USUARIO_ADMIN, rol: 'MONITOR' });
+
+      expect(auth.clubId()).toBe(5);
+      expect(auth.esAdminClub()).toBe(false);
+      expect(auth.puedeCrearClub()).toBe(false);
+    });
+
+    it('al cerrar sesión desaparece el club', async () => {
+      const auth = await conUsuario(USUARIO_ADMIN);
+
+      auth.logout();
+
+      expect(auth.clubId()).toBeNull();
+      expect(auth.esAdminClub()).toBe(false);
     });
   });
 

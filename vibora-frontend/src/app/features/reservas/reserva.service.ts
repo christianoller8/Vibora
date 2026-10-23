@@ -1,7 +1,12 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { CasillaAgenda, Reserva, ReservaRequest } from '../../shared/models/reserva.model';
+import {
+  CasillaAgenda,
+  Reserva,
+  ReservaClub,
+  ReservaRequest,
+} from '../../shared/models/reserva.model';
 
 @Injectable({ providedIn: 'root' })
 export class ReservaService {
@@ -23,6 +28,14 @@ export class ReservaService {
     return this.http.get<Reserva[]>('/api/reservas/mias');
   }
 
+  /** Reservas de un club en un día (YYYY-MM-DD, Madrid). Solo el administrador de ese club. */
+  delClub(clubId: number, fecha: string): Observable<ReservaClub[]> {
+    return this.http.get<ReservaClub[]>(`/api/clubes/${clubId}/reservas`, {
+      params: new HttpParams().set('fecha', fecha),
+    });
+  }
+
+  /** El dueño cancela hasta el plazo; el administrador del club puede cancelar cualquiera antes de que empiece. */
   cancelar(id: number): Observable<Reserva> {
     return this.http.post<Reserva>(`/api/reservas/${id}/cancelar`, {});
   }

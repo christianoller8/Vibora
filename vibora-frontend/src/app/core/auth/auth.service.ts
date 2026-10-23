@@ -45,6 +45,12 @@ export class AuthService {
   readonly usuario = signal<Usuario | null>(null);
   readonly estaAutenticado = computed(() => this.token() !== null);
   readonly rol = computed(() => this.usuario()?.rol ?? null);
+  /** Club del usuario según /me (null si no tiene). */
+  readonly clubId = computed(() => this.usuario()?.clubId ?? null);
+  readonly clubNombre = computed(() => this.usuario()?.clubNombre ?? null);
+  readonly esAdminClub = computed(() => this.rol() === 'ADMIN_CLUB');
+  /** Un jugador sin club puede crear el suyo (y pasar a administrarlo). */
+  readonly puedeCrearClub = computed(() => this.rol() === 'JUGADOR' && this.clubId() === null);
 
   constructor() {
     const guardado = leerTokenGuardado();

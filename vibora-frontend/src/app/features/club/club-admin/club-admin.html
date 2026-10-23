@@ -1,0 +1,42 @@
+<h1>
+  Mi club
+  @if (auth.clubNombre(); as nombre) {
+    <span class="nombre">· {{ nombre }}</span>
+  }
+</h1>
+
+@if (auth.clubId(); as clubId) {
+  <!-- Cada pestaña se crea al abrirla (matTabContent) y se destruye al salir: no hay cargas ni
+       suscripciones a notificaciones de pestañas que nadie está mirando. -->
+  <mat-tab-group
+    dynamicHeight
+    animationDuration="0ms"
+    mat-stretch-tabs="false"
+    aria-label="Gestión del club"
+  >
+    <mat-tab label="Datos">
+      <ng-template matTabContent>
+        <app-datos-club [clubId]="clubId" />
+      </ng-template>
+    </mat-tab>
+    <mat-tab label="Pistas">
+      <ng-template matTabContent>
+        <app-pistas-club [clubId]="clubId" />
+      </ng-template>
+    </mat-tab>
+    <mat-tab label="Tarifas">
+      <ng-template matTabContent>
+        <app-tarifas-club [clubId]="clubId" />
+      </ng-template>
+    </mat-tab>
+    <mat-tab label="Reservas">
+      <ng-template matTabContent>
+        <app-reservas-club [clubId]="clubId" />
+      </ng-template>
+    </mat-tab>
+  </mat-tab-group>
+} @else {
+  <p class="error" role="alert">
+    No encontramos el club asociado a tu cuenta. Cierra sesión e inicia sesión de nuevo.
+  </p>
+}

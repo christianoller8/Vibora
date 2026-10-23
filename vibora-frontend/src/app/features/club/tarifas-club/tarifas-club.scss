@@ -1,0 +1,68 @@
+:host {
+  display: block;
+  padding-top: 1.5rem;
+}
+
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1rem;
+
+  h2 {
+    margin: 0;
+    font: var(--mat-sys-title-large);
+  }
+}
+
+.dia {
+  margin-bottom: 1.5rem;
+
+  h3 {
+    margin: 0 0 0.5rem;
+    font: var(--mat-sys-title-medium);
+  }
+}
+
+.franjas {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.franja {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1rem;
+  padding: 0.25rem 0.5rem 0.25rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+
+  .horario {
+    flex: 1 1 8rem;
+    font: var(--mat-sys-title-small);
+  }
+
+  .precio {
+    font-weight: 500;
+  }
+
+  .acciones {
+    margin-inline-start: auto;
+    white-space: nowrap;
+  }
+}
+
+.vacio {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.error {
+  color: var(--mat-sys-error);
+}

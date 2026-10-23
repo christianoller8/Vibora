@@ -1,0 +1,35 @@
+<h2 mat-dialog-title>{{ edicion ? 'Editar pista' : 'Nueva pista' }}</h2>
+
+<form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+  <mat-dialog-content>
+    <mat-form-field appearance="outline">
+      <mat-label>Nombre de la pista</mat-label>
+      <input matInput type="text" name="nombre" formControlName="nombre" />
+      @if (form.controls.nombre.hasError('maxlength')) {
+        <mat-error>El nombre no puede superar los 255 caracteres</mat-error>
+      } @else {
+        <mat-error>El nombre es obligatorio</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Tipo</mat-label>
+      <select matNativeControl name="tipo" formControlName="tipo">
+        @for (tipo of tipos; track tipo) {
+          <option [value]="tipo">{{ etiquetaTipo[tipo] }}</option>
+        }
+      </select>
+    </mat-form-field>
+
+    @if (error(); as mensaje) {
+      <p class="error" role="alert">{{ mensaje }}</p>
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" data-accion="cancelar" (click)="cancelar()">Cancelar</button>
+    <button mat-flat-button type="submit" [disabled]="form.invalid || guardando()">
+      {{ guardando() ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </mat-dialog-actions>
+</form>

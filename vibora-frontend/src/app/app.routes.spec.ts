@@ -3,12 +3,13 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { CLAVE_TOKEN } from './core/auth/auth.service';
+import { AuthService, CLAVE_TOKEN } from './core/auth/auth.service';
 import {
   FABRICA_CLIENTE_TIEMPO_REAL,
   FabricaClienteTiempoReal,
 } from './core/notificaciones/cliente-tiempo-real';
-import { crearJwt, segundosDesdeAhora } from './testing/test-utils';
+import { Usuario } from './shared/models/usuario.model';
+import { USUARIO_ADMIN, USUARIO_JUGADOR, crearJwt, segundosDesdeAhora } from './testing/test-utils';
 import { routes } from './app.routes';
 
 /** Las páginas autenticadas arrancan la conexión en tiempo real: aquí no se abre ningún socket. */
@@ -16,7 +17,7 @@ const fabricaSinSockets: FabricaClienteTiempoReal = () =>
   Promise.resolve({ activar: () => undefined, desactivar: () => Promise.resolve() });
 
 describe('rutas de la aplicación', () => {
-  async function navegar(url: string, conSesion: boolean): Promise<string> {
+  async function navegar(url: string, conSesion: boolean, usuario?: Usuario): Promise<string> {
     if (conSesion) {
       localStorage.setItem(CLAVE_TOKEN, crearJwt(segundosDesdeAhora(3600)));
     }
@@ -28,6 +29,9 @@ describe('rutas de la aplicación', () => {
         { provide: FABRICA_CLIENTE_TIEMPO_REAL, useValue: fabricaSinSockets },
       ],
     });
+    if (usuario) {
+      TestBed.inject(AuthService).usuario.set(usuario); // como si /me ya hubiera respondido
+    }
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl(url);
     await harness.fixture.whenStable();
@@ -70,6 +74,30 @@ describe('rutas de la aplicación', () => {
 
   it('/deudas con sesión se queda en /deudas', async () => {
     expect(await navegar('/deudas', true)).toBe('/deudas');
+  });
+
+  it('/club sin sesión va a /login conservando redirectTo', async () => {
+    expect(await navegar('/club', false)).toBe('/login?redirectTo=%2Fclub');
+  });
+
+  it('/club/crear sin sesión va a /login conservando redirectTo', async () => {
+    expect(await navegar('/club/crear', false)).toBe('/login?redirectTo=%2Fclub%2Fcrear');
+  });
+
+  it('/club con un administrador se queda en /club', async () => {
+    expect(await navegar('/club', true, USUARIO_ADMIN)).toBe('/club');
+  });
+
+  it('/club con un jugador rebota a /agenda', async () => {
+    expect(await navegar('/club', true, USUARIO_JUGADOR)).toBe('/agenda');
+  });
+
+  it('/club/crear con un jugador sin club se queda en /club/crear', async () => {
+    expect(await navegar('/club/crear', true, USUARIO_JUGADOR)).toBe('/club/crear');
+  });
+
+  it('/club/crear con un administrador rebota a /agenda', async () => {
+    expect(await navegar('/club/crear', true, USUARIO_ADMIN)).toBe('/agenda');
   });
 
   it('/login con sesión rebota a /agenda', async () => {

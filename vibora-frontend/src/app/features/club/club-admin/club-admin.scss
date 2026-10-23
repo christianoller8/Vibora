@@ -1,0 +1,13 @@
+h1 {
+  margin: 0 0 1rem;
+  font: var(--mat-sys-headline-medium);
+
+  .nombre {
+    color: var(--mat-sys-on-surface-variant);
+    font: var(--mat-sys-title-large);
+  }
+}
+
+.error {
+  color: var(--mat-sys-error);
+}

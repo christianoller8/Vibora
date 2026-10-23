@@ -1,0 +1,16 @@
+@if (cargando()) {
+  <mat-spinner diameter="40" aria-label="Cargando los datos del club" />
+} @else if (errorCarga(); as mensaje) {
+  <p class="error" role="alert">{{ mensaje }}</p>
+  <button mat-stroked-button type="button" data-accion="reintentar" (click)="cargar()">
+    Reintentar
+  </button>
+} @else {
+  <app-club-formulario
+    textoEnviar="Guardar cambios"
+    [club]="club()"
+    [enviando]="guardando()"
+    [error]="errorGuardado()"
+    (enviar)="guardar($event)"
+  />
+}

@@ -1,0 +1,10 @@
+:host {
+  display: block;
+  padding-top: 1.5rem;
+  // el área táctil del botón de guardar sobresale 4 px por debajo y, sin este margen, la pestaña muestra scroll
+  padding-bottom: 0.5rem;
+}
+
+.error {
+  color: var(--mat-sys-error);
+}

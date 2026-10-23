@@ -32,6 +32,11 @@ export const routes: Routes = [
         canActivate: [authGuard],
         loadChildren: () => import('./features/deudas/deudas.routes').then((m) => m.DEUDAS_ROUTES),
       },
+      {
+        path: 'club',
+        canActivate: [authGuard],
+        loadChildren: () => import('./features/club/club.routes').then((m) => m.CLUB_ROUTES),
+      },
     ],
   },
   {

@@ -1,0 +1,10 @@
+mat-dialog-content {
+  display: flex;
+  flex-direction: column;
+  min-width: min(22rem, 80vw);
+}
+
+.error {
+  margin: 0;
+  color: var(--mat-sys-error);
+}

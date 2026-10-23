@@ -4,7 +4,7 @@ import { NotificacionesStore } from '../../notificaciones/notificaciones.store';
 import { TiempoRealService } from '../../notificaciones/tiempo-real.service';
 import { Router, provideRouter } from '@angular/router';
 import { AuthService } from '../../auth/auth.service';
-import { crearAuthFalso } from '../../../testing/test-utils';
+import { USUARIO_ADMIN, USUARIO_JUGADOR, crearAuthFalso } from '../../../testing/test-utils';
 import { MainLayout } from './main-layout';
 
 describe('MainLayout', () => {
@@ -81,7 +81,36 @@ describe('MainLayout', () => {
       '/mis-reservas',
       '/partidos',
       '/deudas',
+      '/club/crear',
     ]);
+  });
+
+  describe('entrada del club según el usuario', () => {
+    const entradaClub = (): HTMLAnchorElement | undefined =>
+      Array.from(el().querySelectorAll<HTMLAnchorElement>('a[mat-list-item]')).find((a) =>
+        a.getAttribute('href')?.startsWith('/club'),
+      );
+
+    it('un jugador sin club ve "Crear mi club"', async () => {
+      await crear(crearAuthFalso(USUARIO_JUGADOR));
+
+      expect(entradaClub()?.textContent).toContain('Crear mi club');
+      expect(entradaClub()?.getAttribute('href')).toBe('/club/crear');
+    });
+
+    it('un administrador ve "Mi club"', async () => {
+      await crear(crearAuthFalso(USUARIO_ADMIN));
+
+      expect(entradaClub()?.textContent).toContain('Mi club');
+      expect(entradaClub()?.textContent).not.toContain('Crear');
+      expect(entradaClub()?.getAttribute('href')).toBe('/club');
+    });
+
+    it('un monitor no ve ninguna entrada de club', async () => {
+      await crear(crearAuthFalso({ ...USUARIO_ADMIN, rol: 'MONITOR' }));
+
+      expect(entradaClub()).toBeUndefined();
+    });
   });
 
   it('muestra la campana de notificaciones en la barra solo con sesión', async () => {

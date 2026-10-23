@@ -24,6 +24,17 @@
           <mat-icon matListItemIcon>payments</mat-icon>
           <span matListItemTitle>Deudas</span>
         </a>
+        @if (auth.esAdminClub()) {
+          <a mat-list-item routerLink="/club" routerLinkActive="activo" (click)="alNavegar()">
+            <mat-icon matListItemIcon>storefront</mat-icon>
+            <span matListItemTitle>Mi club</span>
+          </a>
+        } @else if (auth.puedeCrearClub()) {
+          <a mat-list-item routerLink="/club/crear" routerLinkActive="activo" (click)="alNavegar()">
+            <mat-icon matListItemIcon>add_business</mat-icon>
+            <span matListItemTitle>Crear mi club</span>
+          </a>
+        }
       </mat-nav-list>
     }
   </mat-sidenav>

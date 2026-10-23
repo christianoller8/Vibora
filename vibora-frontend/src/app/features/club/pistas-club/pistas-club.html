@@ -1,0 +1,79 @@
+<div class="cabecera">
+  <h2>Pistas</h2>
+  <button mat-flat-button type="button" data-accion="nueva" (click)="nueva()">
+    <mat-icon>add</mat-icon>
+    Nueva pista
+  </button>
+</div>
+
+@if (cargando()) {
+  <mat-spinner diameter="40" aria-label="Cargando pistas" />
+} @else if (error(); as mensaje) {
+  <p class="error" role="alert">{{ mensaje }}</p>
+  <button mat-stroked-button type="button" data-accion="reintentar" (click)="cargar()">
+    Reintentar
+  </button>
+} @else if (pistas().length === 0) {
+  <p class="vacio">Todavía no hay pistas en tu club. Crea la primera para que se pueda reservar.</p>
+} @else {
+  <div class="tabla">
+    <table mat-table [dataSource]="pistas()" aria-label="Pistas del club">
+      <ng-container matColumnDef="nombre">
+        <th mat-header-cell *matHeaderCellDef>Nombre</th>
+        <td mat-cell *matCellDef="let pista">{{ pista.nombre }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="tipo">
+        <th mat-header-cell *matHeaderCellDef>Tipo</th>
+        <td mat-cell *matCellDef="let pista">{{ etiquetaDeTipo(pista.tipo) }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="activa">
+        <th mat-header-cell *matHeaderCellDef>Activa</th>
+        <td mat-cell *matCellDef="let pista">
+          <mat-slide-toggle
+            [checked]="pista.activa"
+            [disabled]="ocupadas().has(pista.id)"
+            [aria-label]="pista.nombre + ' activa'"
+            (change)="alternarActiva(pista, $event)"
+          />
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef><span class="oculto">Acciones</span></th>
+        <td mat-cell *matCellDef="let pista" class="acciones">
+          <button
+            mat-icon-button
+            type="button"
+            data-accion="editar"
+            [attr.aria-label]="'Editar ' + pista.nombre"
+            (click)="editar(pista)"
+          >
+            <mat-icon>edit</mat-icon>
+          </button>
+          @if (pista.activa) {
+            <button
+              mat-icon-button
+              type="button"
+              data-accion="baja"
+              [attr.aria-label]="'Dar de baja ' + pista.nombre"
+              [disabled]="ocupadas().has(pista.id)"
+              (click)="darDeBaja(pista)"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+          }
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+      <tr
+        mat-row
+        *matRowDef="let pista; columns: columnas"
+        class="pista"
+        [class.inactiva]="!pista.activa"
+      ></tr>
+    </table>
+  </div>
+}

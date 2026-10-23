@@ -1,0 +1,73 @@
+<form [formGroup]="form" (ngSubmit)="alEnviar()" novalidate>
+  <mat-form-field appearance="outline">
+    <mat-label>Nombre del club</mat-label>
+    <input
+      matInput
+      type="text"
+      name="nombre"
+      formControlName="nombre"
+      autocomplete="organization"
+    />
+    @if (form.controls.nombre.hasError('maxlength')) {
+      <mat-error>El nombre no puede superar los 255 caracteres</mat-error>
+    } @else {
+      <mat-error>El nombre es obligatorio</mat-error>
+    }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Dirección (opcional)</mat-label>
+    <input
+      matInput
+      type="text"
+      name="direccion"
+      formControlName="direccion"
+      autocomplete="street-address"
+    />
+    <mat-error>La dirección no puede superar los 255 caracteres</mat-error>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Ciudad (opcional)</mat-label>
+    <input
+      matInput
+      type="text"
+      name="ciudad"
+      formControlName="ciudad"
+      autocomplete="address-level2"
+    />
+    <mat-error>La ciudad no puede superar los 255 caracteres</mat-error>
+  </mat-form-field>
+
+  <div class="horario">
+    <mat-form-field appearance="outline">
+      <mat-label>Hora de apertura</mat-label>
+      <input matInput type="time" name="horaApertura" formControlName="horaApertura" />
+      <mat-error>La hora de apertura es obligatoria</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Hora de cierre</mat-label>
+      <input
+        matInput
+        type="time"
+        name="horaCierre"
+        formControlName="horaCierre"
+        [errorStateMatcher]="matcherCierre"
+      />
+      @if (form.hasError('rangoHoras')) {
+        <mat-error>La hora de cierre debe ser posterior a la de apertura</mat-error>
+      } @else {
+        <mat-error>La hora de cierre es obligatoria</mat-error>
+      }
+    </mat-form-field>
+  </div>
+
+  @if (error(); as mensaje) {
+    <p class="error" role="alert">{{ mensaje }}</p>
+  }
+
+  <button mat-flat-button type="submit" [disabled]="form.invalid || enviando()">
+    {{ enviando() ? 'Guardando…' : textoEnviar() }}
+  </button>
+</form>

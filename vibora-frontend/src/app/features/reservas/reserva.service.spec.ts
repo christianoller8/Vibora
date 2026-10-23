@@ -43,6 +43,16 @@ describe('ReservaService', () => {
     expect(await resultado).toEqual([{ id: 1 }]);
   });
 
+  it('lista las reservas de un club en una fecha (vista del administrador)', async () => {
+    const resultado = firstValueFrom(servicio.delClub(5, '2026-07-15'));
+    const req = http.expectOne(
+      (r) => r.url === '/api/clubes/5/reservas' && r.params.get('fecha') === '2026-07-15',
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush([{ id: 3 }]);
+    expect(await resultado).toEqual([{ id: 3 }]);
+  });
+
   it('cancela con POST /api/reservas/{id}/cancelar', async () => {
     const resultado = firstValueFrom(servicio.cancelar(7));
     const req = http.expectOne('/api/reservas/7/cancelar');
