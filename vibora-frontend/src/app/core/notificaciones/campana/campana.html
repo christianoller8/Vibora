@@ -1,0 +1,44 @@
+<button
+  mat-icon-button
+  type="button"
+  data-accion="campana"
+  [matMenuTriggerFor]="menu"
+  [attr.aria-label]="etiqueta()"
+  [matBadge]="textoInsignia()"
+  [matBadgeHidden]="noLeidas() === 0"
+  matBadgeSize="medium"
+  matBadgeColor="warn"
+>
+  <mat-icon aria-hidden="true">notifications</mat-icon>
+</button>
+
+<mat-menu #menu="matMenu" class="menu-notificaciones" xPosition="before">
+  <button
+    mat-menu-item
+    type="button"
+    data-accion="marcar-todas"
+    [disabled]="noLeidas() === 0"
+    (click)="marcarTodas($event)"
+  >
+    <mat-icon>done_all</mat-icon>
+    <span>Marcar todas como leídas</span>
+  </button>
+
+  @for (notificacion of items(); track notificacion.id) {
+    <button
+      mat-menu-item
+      type="button"
+      class="notificacion"
+      [class.no-leida]="!notificacion.leida"
+      [attr.aria-label]="etiquetaItem(notificacion)"
+      (click)="abrir(notificacion)"
+    >
+      <span class="contenido">
+        <span class="mensaje">{{ notificacion.mensaje }}</span>
+        <span class="tiempo">{{ tiempo(notificacion.creadaEn) }}</span>
+      </span>
+    </button>
+  } @empty {
+    <p class="vacio">No tienes notificaciones</p>
+  }
+</mat-menu>

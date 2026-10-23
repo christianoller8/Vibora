@@ -1,0 +1,106 @@
+<h1>Partidos abiertos</h1>
+
+<div class="filtros">
+  <mat-form-field appearance="outline">
+    <mat-label>Club</mat-label>
+    <select matNativeControl data-filtro="club" [formControl]="clubCtrl">
+      <option [ngValue]="null">Todos los clubes</option>
+      @for (club of clubes(); track club.id) {
+        <option [ngValue]="club.id">{{ club.nombre }}</option>
+      }
+    </select>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Fecha</mat-label>
+    <input matInput type="date" data-filtro="fecha" [formControl]="fechaCtrl" [min]="minFecha" />
+  </mat-form-field>
+</div>
+
+@if (cargando()) {
+  <mat-spinner diameter="40" aria-label="Cargando partidos" />
+} @else if (error(); as mensaje) {
+  <p class="error" role="alert">{{ mensaje }}</p>
+} @else if (partidos().length === 0) {
+  <p class="vacio">
+    No hay partidos abiertos. Abre una de tus reservas desde "Mis reservas" para que otros se
+    apunten.
+  </p>
+} @else {
+  <div class="partidos">
+    @for (partido of partidos(); track partido.reservaId) {
+      <mat-card class="partido" appearance="outlined">
+        <mat-card-header>
+          <mat-card-title>{{ partido.club.nombre }} · {{ partido.pistaNombre }}</mat-card-title>
+          <mat-card-subtitle>
+            <span class="fecha">{{ formatearFecha(partido.inicio) }}</span>
+            · {{ formatearRango(partido.inicio, partido.fin) }}
+          </mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+          <p class="resumen">
+            <span class="cuota"
+              >Cuota: {{ formatearPrecio(partido.cuotaPorJugador) }} por jugador</span
+            >
+            <span class="plazas" [class.completo]="partido.plazasLibres <= 0">
+              {{ textoPlazas(partido) }}
+            </span>
+          </p>
+
+          <mat-chip-set aria-label="Jugadores del partido" class="asientos">
+            @for (jugador of partido.jugadores; track jugador.usuarioId) {
+              <mat-chip class="jugador">
+                <span matChipAvatar>{{ jugador.nombre.charAt(0).toUpperCase() }}</span>
+                {{ nombreJugador(jugador) }}
+              </mat-chip>
+            }
+            @for (asiento of asientosLibres(partido); track asiento) {
+              <mat-chip class="asiento-libre">
+                <mat-icon matChipAvatar>person_add</mat-icon>
+                Libre
+              </mat-chip>
+            }
+          </mat-chip-set>
+
+          @if (partido.esOrganizador) {
+            <mat-chip-set aria-label="Tu situación" class="insignias">
+              <mat-chip class="insignia" highlighted>Organizador</mat-chip>
+            </mat-chip-set>
+          } @else if (partido.yaApuntado) {
+            <mat-chip-set aria-label="Tu situación" class="insignias">
+              <mat-chip class="insignia" highlighted>Ya apuntado</mat-chip>
+            </mat-chip-set>
+          }
+        </mat-card-content>
+
+        @if (puedeApuntarse(partido) || puedeSalir(partido)) {
+          <mat-card-actions align="end">
+            @if (puedeApuntarse(partido)) {
+              <button
+                mat-flat-button
+                type="button"
+                data-accion="apuntarse"
+                [disabled]="enCurso() !== null"
+                (click)="apuntarse(partido)"
+              >
+                Apuntarme
+              </button>
+            }
+            @if (puedeSalir(partido)) {
+              <button
+                mat-stroked-button
+                type="button"
+                data-accion="salir"
+                [disabled]="enCurso() !== null"
+                (click)="salir(partido)"
+              >
+                Salir
+              </button>
+            }
+          </mat-card-actions>
+        }
+      </mat-card>
+    }
+  </div>
+}

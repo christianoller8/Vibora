@@ -1,0 +1,141 @@
+<h1>Deudas</h1>
+
+@if (cargando()) {
+  <mat-spinner diameter="40" aria-label="Cargando deudas" />
+} @else if (error(); as mensaje) {
+  <p class="error" role="alert">{{ mensaje }}</p>
+} @else {
+  @if (saldos(); as resumen) {
+    <mat-card class="saldos" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Resumen</mat-card-title>
+        <mat-card-subtitle>Solo cuentan los cargos pendientes</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="totales">
+          <div class="dato">
+            <span class="etiqueta">Debo</span>
+            <strong class="total-debo">{{ formatearPrecio(resumen.totalDebo) }}</strong>
+          </div>
+          <div class="dato">
+            <span class="etiqueta">Me deben</span>
+            <strong class="total-me-deben">{{ formatearPrecio(resumen.totalMeDeben) }}</strong>
+          </div>
+          <div class="dato">
+            <span class="etiqueta">Neto</span>
+            <strong class="total-neto" [class]="claseNeto(resumen.totalNeto)">{{
+              formatearNeto(resumen.totalNeto)
+            }}</strong>
+          </div>
+        </div>
+
+        @if (resumen.saldos.length === 0) {
+          <p class="vacio">No tienes saldos pendientes con nadie.</p>
+        } @else {
+          <ul class="personas" aria-label="Saldo con cada persona">
+            @for (saldo of resumen.saldos; track saldo.usuarioId) {
+              <li class="saldo-persona">
+                <span class="persona">{{ nombreCompleto(saldo) }}</span>
+                <span class="importe" [class]="claseNeto(saldo.neto)">{{
+                  formatearNeto(saldo.neto)
+                }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <mat-chip-listbox
+    #filtros
+    class="filtros"
+    aria-label="Filtrar por estado"
+    [value]="filtro()"
+    (change)="cambiarFiltro($event.value, filtros)"
+  >
+    <mat-chip-option value="PENDIENTE">Pendientes</mat-chip-option>
+    <mat-chip-option value="TODOS">Todos</mat-chip-option>
+  </mat-chip-listbox>
+
+  <mat-tab-group animationDuration="0ms">
+    <mat-tab label="Debo">
+      <div class="lista" data-lista="debo">
+        @if (debo().length === 0) {
+          <p class="vacio">
+            {{ filtro() === 'PENDIENTE' ? 'No tienes deudas pendientes.' : 'No tienes deudas.' }}
+          </p>
+        } @else {
+          <ul class="cargos">
+            @for (cargo of debo(); track cargo.id) {
+              <li class="cargo">
+                <div class="datos">
+                  <span class="titulo">{{ cargo.clubNombre }} · {{ cargo.pistaNombre }}</span>
+                  <span class="fecha">
+                    {{ formatearFechaLarga(cargo.inicio) }} · {{ formatearHora(cargo.inicio) }}
+                  </span>
+                  <span class="contraparte"
+                    >A: {{ nombreCompleto(contraparte(cargo, 'debo')) }}</span
+                  >
+                  @if (cargo.pagadoEn; as pagadoEn) {
+                    <span class="pagado-en">Pagado el {{ formatearFecha(pagadoEn) }}</span>
+                  }
+                </div>
+                <span class="importe-cargo">{{ formatearPrecio(cargo.importe) }}</span>
+                <span class="estado" [class]="'estado-' + cargo.estado.toLowerCase()">{{
+                  etiquetaEstado(cargo.estado)
+                }}</span>
+                @if (cargo.estado === 'PENDIENTE') {
+                  <button
+                    mat-flat-button
+                    type="button"
+                    data-accion="pagar"
+                    [disabled]="pagando()"
+                    (click)="pagar(cargo)"
+                  >
+                    Pagar
+                  </button>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Me deben">
+      <div class="lista" data-lista="me-deben">
+        @if (meDeben().length === 0) {
+          <p class="vacio">
+            {{
+              filtro() === 'PENDIENTE' ? 'Nadie te debe nada ahora mismo.' : 'Nadie te debe nada.'
+            }}
+          </p>
+        } @else {
+          <ul class="cargos">
+            @for (cargo of meDeben(); track cargo.id) {
+              <li class="cargo">
+                <div class="datos">
+                  <span class="titulo">{{ cargo.clubNombre }} · {{ cargo.pistaNombre }}</span>
+                  <span class="fecha">
+                    {{ formatearFechaLarga(cargo.inicio) }} · {{ formatearHora(cargo.inicio) }}
+                  </span>
+                  <span class="contraparte"
+                    >De: {{ nombreCompleto(contraparte(cargo, 'me-deben')) }}</span
+                  >
+                  @if (cargo.pagadoEn; as pagadoEn) {
+                    <span class="pagado-en">Pagado el {{ formatearFecha(pagadoEn) }}</span>
+                  }
+                </div>
+                <span class="importe-cargo">{{ formatearPrecio(cargo.importe) }}</span>
+                <span class="estado" [class]="'estado-' + cargo.estado.toLowerCase()">{{
+                  etiquetaEstado(cargo.estado)
+                }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+}
