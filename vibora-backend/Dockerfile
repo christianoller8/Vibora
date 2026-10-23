@@ -44,5 +44,6 @@ EXPOSE 8081
 HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=5 \
   CMD wget -q -O - http://127.0.0.1:8081/actuator/health | grep -q '"status":"UP"' || exit 1
 
-# Falla pronto y claro si no hay secreto JWT (la imagen no lleva ninguno por defecto).
+# Falla pronto y claro si no hay secreto JWT (la imagen no lleva ninguno por defecto). Con docker compose, esto es solo
+# la segunda linea de defensa: el servicio comprobar-VIBORA_JWT_SECRET ya aborta el `up` antes de crear el backend.
 ENTRYPOINT ["sh", "-c", "[ -n \"$VIBORA_JWT_SECRET\" ] || { echo 'ERROR: define VIBORA_JWT_SECRET (>= 32 bytes, aleatorio)' >&2; exit 1; }; exec java -XX:MaxRAMPercentage=75 $JAVA_OPTS -jar application.jar"]

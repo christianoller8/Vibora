@@ -22,7 +22,19 @@ docker compose --profile app up -d --build
 ```
 
 La web queda en http://localhost:8088 (cambia el puerto con `FRONTEND_PORT` en `.env`). Nginx sirve la SPA y reenvía
-`/api` y `/ws` al backend, que no se publica en el host. Sin `VIBORA_JWT_SECRET` el backend se niega a arrancar.
+`/api` y `/ws` al backend, que no se publica en el host.
+
+`VIBORA_JWT_SECRET` es obligatorio. Un servicio de comprobación (`comprobar-VIBORA_JWT_SECRET`, solo con el perfil
+`app`) corre antes que el backend y aborta el `up` al instante si el secreto está vacío, tiene menos de 32 caracteres o
+sigue siendo el marcador `CAMBIAME-...` de `env.example`:
+
+```text
+service "comprobar-VIBORA_JWT_SECRET" didn't complete successfully: exit 1
+```
+
+El motivo exacto sale con `docker compose --profile app logs comprobar-VIBORA_JWT_SECRET`. El backend ni se crea (no
+hay bucle de reinicios), y `docker compose up -d db` no se ve afectado: no necesita `.env`. Si arrancas el backend
+saltándote la comprobación (`--no-deps`), su `ENTRYPOINT` también se niega a arrancar sin secreto.
 
 ```bash
 docker compose --profile app stop backend frontend   # para solo la app; la base de datos sigue en marcha

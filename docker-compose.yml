@@ -1,10 +1,33 @@
 name: vibora
 
 # Desarrollo (como siempre):  docker compose up -d db
-# Stack completo:             docker compose --profile app up -d --build   (necesita .env, ver .env.example)
+# Stack completo:             docker compose --profile app up -d --build   (necesita .env, ver env.example)
 # Los servicios backend y frontend llevan el perfil "app": sin --profile solo arranca la base de datos.
 
 services:
+  # Pre-flight del secreto JWT (solo con el perfil "app"). OBLIGATORIO, pero NO con ${VIBORA_JWT_SECRET:?...}:
+  # compose interpola tambien los servicios de perfiles inactivos, y eso haria fallar `docker compose up -d db` en
+  # desarrollo (sin .env). Asi, `up --profile app` sin un secreto valido (vacio, < 32 caracteres o el marcador de
+  # env.example) aborta al instante con:  service "comprobar-VIBORA_JWT_SECRET" didn't complete successfully: exit 1
+  # (el motivo exacto: `docker compose logs comprobar-VIBORA_JWT_SECRET`) y el backend NI SE CREA: nada de bucles de
+  # reinicio. Reutiliza la imagen de la base de datos (ya descargada), asi que no baja nada nuevo.
+  comprobar-VIBORA_JWT_SECRET:
+    profiles: ["app"]
+    image: postgres:17
+    restart: "no"
+    environment:
+      VIBORA_JWT_SECRET: ${VIBORA_JWT_SECRET:-}
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        s="$$VIBORA_JWT_SECRET"
+        if [ "$${#s}" -lt 32 ] || [ "$${s#CAMBIAME}" != "$$s" ]; then
+          echo "ERROR: define VIBORA_JWT_SECRET en .env (minimo 32 caracteres; no sirve el marcador CAMBIAME-... de env.example)." >&2
+          echo "Genera uno:  node -e \"console.log(require('crypto').randomBytes(48).toString('base64'))\"" >&2
+          exit 1
+        fi
+
+
   db:
     image: postgres:17
     container_name: vibora-postgres
@@ -35,14 +58,16 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-vibora}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-vibora}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-vibora}
-      # OBLIGATORIO, pero NO con ${VAR:?...}: compose interpola tambien los servicios de perfiles inactivos, y eso
-      # haria fallar `docker compose up -d db` en desarrollo (sin .env). Si falta, el contenedor se niega a arrancar
-      # con un mensaje claro (ver ENTRYPOINT de vibora-backend/Dockerfile) y la app tampoco acepta secretos < 32 bytes.
+      # OBLIGATORIO: lo exige comprobar-VIBORA_JWT_SECRET (arriba, depends_on). Defensa en profundidad: si alguien
+      # arranca el backend saltandose esa comprobacion (--no-deps), el ENTRYPOINT de vibora-backend/Dockerfile se niega
+      # a arrancar sin secreto y la app tampoco acepta secretos de menos de 32 bytes.
       VIBORA_JWT_SECRET: ${VIBORA_JWT_SECRET:-}
       VIBORA_WEBSOCKET_ORIGENES_PERMITIDOS: http://localhost:${FRONTEND_PORT:-8088}
       SPRING_JPA_SHOW_SQL: "false"
       JAVA_OPTS: ${JAVA_OPTS:-}
     depends_on:
+      comprobar-VIBORA_JWT_SECRET:
+        condition: service_completed_successfully
       db:
         condition: service_healthy
     # Sin "ports": el backend solo es alcanzable a traves de nginx (red interna de compose).

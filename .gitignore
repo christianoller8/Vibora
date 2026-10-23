@@ -8,7 +8,7 @@ vibora-frontend/node_modules/
 vibora-frontend/dist/
 vibora-frontend/.angular/
 
-# Secretos locales del stack Docker (la plantilla es .env.example)
+# Secretos locales del stack Docker (la plantilla es env.example)
 .env
 
 # IDE
