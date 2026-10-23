@@ -3,7 +3,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Subject, of, throwError } from 'rxjs';
+import { NotificacionesStore } from '../../../core/notificaciones/notificaciones.store';
+import { Notificacion, TipoNotificacion } from '../../../shared/models/notificacion.model';
 import { Reserva } from '../../../shared/models/reserva.model';
+import { crearNotificacion } from '../../../testing/test-utils';
 import { PartidoService } from '../../partidos/partido.service';
 import { ReservaService } from '../reserva.service';
 import { MisReservas } from './mis-reservas';
@@ -38,11 +41,13 @@ describe('MisReservas', () => {
   const FUTURA = reserva(1, 'CONFIRMADA', 48 * HORA);
   const PASADA = reserva(2, 'CONFIRMADA', -48 * HORA);
   const CANCELADA = reserva(3, 'CANCELADA', 72 * HORA);
+  let recibidas: Subject<Notificacion>;
 
   async function crear(): Promise<void> {
     await TestBed.configureTestingModule({
       imports: [MisReservas],
       providers: [
+        { provide: NotificacionesStore, useValue: { recibidas$: recibidas.asObservable() } },
         { provide: ReservaService, useValue: reservas },
         { provide: PartidoService, useValue: partidos },
         { provide: MatDialog, useValue: dialogo },
@@ -60,6 +65,7 @@ describe('MisReservas', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
+    recibidas = new Subject<Notificacion>();
     reservas.mias.mockReturnValue(of([FUTURA, PASADA, CANCELADA]));
     dialogo.open.mockReturnValue({ afterClosed: () => of(true) });
   });
@@ -163,6 +169,104 @@ describe('MisReservas', () => {
     await fixture.whenStable();
 
     expect(snack.open.mock.calls[0][0]).toContain('Fuera del plazo de cancelación');
+  });
+
+  describe('notificaciones en tiempo real', () => {
+    const push = (tipo: TipoNotificacion): void =>
+      recibidas.next(crearNotificacion(Math.floor(Math.random() * 1e6), { tipo }));
+
+    /** Crea la página con reloj real (whenStable lo necesita) y luego congela el tiempo para el debounce. */
+    async function arrancar(): Promise<void> {
+      await crear();
+      vi.useFakeTimers();
+      reservas.mias.mockClear();
+    }
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it.each<TipoNotificacion>([
+      'JUGADOR_SE_APUNTO',
+      'JUGADOR_SALIO',
+      'PARTIDO_COMPLETO',
+      'RESERVA_CANCELADA',
+    ])('recarga las reservas al llegar %s', async (tipo) => {
+      await arrancar();
+
+      push(tipo);
+      vi.advanceTimersByTime(300);
+
+      expect(reservas.mias).toHaveBeenCalledTimes(1);
+    });
+
+    it.each<TipoNotificacion>(['CARGO_NUEVO', 'PAGO_RECIBIDO'])(
+      'ignora %s: no cambia ninguna reserva',
+      async (tipo) => {
+        await arrancar();
+
+        push(tipo);
+        vi.advanceTimersByTime(1000);
+
+        expect(reservas.mias).not.toHaveBeenCalled();
+      },
+    );
+
+    it('agrupa ráfagas: diez push seguidos hacen una sola petición', async () => {
+      await arrancar();
+
+      for (let i = 0; i < 10; i++) {
+        push('JUGADOR_SE_APUNTO');
+        vi.advanceTimersByTime(50);
+      }
+      expect(reservas.mias).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(300);
+
+      expect(reservas.mias).toHaveBeenCalledTimes(1);
+    });
+
+    it('la recarga es silenciosa: sin spinner y con la lista anterior a la vista', async () => {
+      await arrancar();
+      const pendiente = new Subject<Reserva[]>();
+      reservas.mias.mockReturnValue(pendiente);
+
+      push('JUGADOR_SE_APUNTO');
+      vi.advanceTimersByTime(300);
+      fixture.detectChanges();
+
+      expect(el().querySelector('mat-spinner')).toBeNull();
+      expect(filas()).toHaveLength(3);
+
+      pendiente.next([{ ...FUTURA, jugadores: 3 }]);
+      pendiente.complete();
+      fixture.detectChanges();
+      expect(filas()).toHaveLength(1);
+      expect(filas()[0].textContent).toContain('Jugadores: 3/4');
+    });
+
+    it('si la recarga silenciosa falla muestra el error', async () => {
+      await arrancar();
+      reservas.mias.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+
+      push('RESERVA_CANCELADA');
+      vi.advanceTimersByTime(300);
+      fixture.detectChanges();
+
+      expect(el().querySelector('[role="alert"]')).not.toBeNull();
+    });
+
+    it('al destruir la página deja de escuchar: no recarga aunque llegue un push', async () => {
+      await arrancar();
+
+      push('JUGADOR_SE_APUNTO'); // pendiente de debounce
+      fixture.destroy();
+      vi.advanceTimersByTime(300);
+      push('JUGADOR_SALIO');
+      vi.advanceTimersByTime(300);
+
+      expect(reservas.mias).not.toHaveBeenCalled();
+      expect(recibidas.observed).toBe(false);
+    });
   });
 
   describe('partido abierto', () => {

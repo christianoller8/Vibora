@@ -2,8 +2,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
+import { NotificacionesStore } from '../../../core/notificaciones/notificaciones.store';
 import { Cargo, EstadoCargo, Saldos } from '../../../shared/models/cargo.model';
+import { Notificacion, TipoNotificacion } from '../../../shared/models/notificacion.model';
+import { crearNotificacion } from '../../../testing/test-utils';
 import { CargoService } from '../cargo.service';
 import { Deudas } from './deudas';
 
@@ -38,11 +41,13 @@ describe('Deudas', () => {
   const cargos = { mios: vi.fn(), porCobrar: vi.fn(), pagar: vi.fn(), saldos: vi.fn() };
   const dialogo = { open: vi.fn() };
   const snack = { open: vi.fn() };
+  let recibidas: Subject<Notificacion>;
 
   async function crear(): Promise<void> {
     await TestBed.configureTestingModule({
       imports: [Deudas],
       providers: [
+        { provide: NotificacionesStore, useValue: { recibidas$: recibidas.asObservable() } },
         { provide: CargoService, useValue: cargos },
         { provide: MatDialog, useValue: dialogo },
         { provide: MatSnackBar, useValue: snack },
@@ -65,6 +70,7 @@ describe('Deudas', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
+    recibidas = new Subject<Notificacion>();
     cargos.mios.mockReturnValue(of([cargo(1), cargo(2, 'PAGADO')]));
     cargos.porCobrar.mockReturnValue(
       of([cargo(3, 'PENDIENTE', { deudor: { id: 4, nombre: 'Pepe', apellidos: 'Gil' } })]),
@@ -213,6 +219,115 @@ describe('Deudas', () => {
 
       expect(cargos.mios).toHaveBeenCalledWith(undefined);
       expect(cargos.porCobrar).toHaveBeenCalledWith(undefined);
+    });
+  });
+
+  describe('notificaciones en tiempo real', () => {
+    const push = (tipo: TipoNotificacion): void =>
+      recibidas.next(crearNotificacion(Math.floor(Math.random() * 1e6), { tipo }));
+
+    /** Crea la página con reloj real (whenStable lo necesita) y luego congela el tiempo para el debounce. */
+    async function arrancar(): Promise<void> {
+      await crear();
+      vi.useFakeTimers();
+      cargos.mios.mockClear();
+      cargos.porCobrar.mockClear();
+      cargos.saldos.mockClear();
+    }
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it.each<TipoNotificacion>([
+      'CARGO_NUEVO',
+      'PAGO_RECIBIDO',
+      'JUGADOR_SALIO',
+      'RESERVA_CANCELADA',
+    ])('recarga saldos y ambas listas al llegar %s', async (tipo) => {
+      await arrancar();
+
+      push(tipo);
+      vi.advanceTimersByTime(300);
+
+      expect(cargos.saldos).toHaveBeenCalledTimes(1);
+      expect(cargos.mios).toHaveBeenCalledTimes(1);
+      expect(cargos.porCobrar).toHaveBeenCalledTimes(1);
+    });
+
+    it.each<TipoNotificacion>(['JUGADOR_SE_APUNTO', 'PARTIDO_COMPLETO'])(
+      'ignora %s: no cambia ningún cargo',
+      async (tipo) => {
+        await arrancar();
+
+        push(tipo);
+        vi.advanceTimersByTime(1000);
+
+        expect(cargos.saldos).not.toHaveBeenCalled();
+      },
+    );
+
+    it('agrupa ráfagas: diez push seguidos hacen una sola recarga', async () => {
+      await arrancar();
+
+      for (let i = 0; i < 10; i++) {
+        push('CARGO_NUEVO');
+        vi.advanceTimersByTime(50);
+      }
+      expect(cargos.saldos).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(300);
+
+      expect(cargos.saldos).toHaveBeenCalledTimes(1);
+    });
+
+    it('la recarga es silenciosa: sin spinner y conservando el filtro "Todos"', async () => {
+      await crear();
+      const chips = Array.from(el().querySelectorAll('mat-chip-option'));
+      chips[1].querySelector<HTMLElement>('button.mdc-evolution-chip__action--primary')!.click();
+      await fixture.whenStable();
+      vi.useFakeTimers();
+      cargos.mios.mockClear();
+      const pendiente = new Subject<Cargo[]>();
+      cargos.mios.mockReturnValue(pendiente);
+
+      push('PAGO_RECIBIDO');
+      vi.advanceTimersByTime(300);
+      fixture.detectChanges();
+
+      expect(cargos.mios).toHaveBeenCalledWith(undefined); // sigue en "Todos"
+      expect(el().querySelector('mat-spinner')).toBeNull();
+      expect(lista('debo')).toHaveLength(2); // lo anterior sigue a la vista
+
+      pendiente.next([cargo(7)]);
+      pendiente.complete();
+      fixture.detectChanges();
+      expect(lista('debo')).toHaveLength(1);
+    });
+
+    it('no pierde la pestaña elegida al recargar', async () => {
+      await crear();
+      await abrirMeDeben();
+      vi.useFakeTimers();
+
+      push('CARGO_NUEVO');
+      vi.advanceTimersByTime(300);
+      fixture.detectChanges();
+
+      const seleccionada = el().querySelector('[role="tab"][aria-selected="true"]');
+      expect(seleccionada?.textContent?.trim()).toBe('Me deben');
+    });
+
+    it('al destruir la página deja de escuchar: no recarga aunque llegue un push', async () => {
+      await arrancar();
+
+      push('CARGO_NUEVO'); // pendiente de debounce
+      fixture.destroy();
+      vi.advanceTimersByTime(300);
+      push('PAGO_RECIBIDO');
+      vi.advanceTimersByTime(300);
+
+      expect(cargos.saldos).not.toHaveBeenCalled();
+      expect(recibidas.observed).toBe(false);
     });
   });
 

@@ -7,8 +7,9 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
-import { EMPTY, Subject, catchError, forkJoin, switchMap } from 'rxjs';
+import { EMPTY, Subject, catchError, debounceTime, filter, forkJoin, switchMap } from 'rxjs';
 import { mensajeDeError } from '../../../core/http/error.util';
+import { NotificacionesStore } from '../../../core/notificaciones/notificaciones.store';
 import {
   formatearFecha,
   formatearFechaLarga,
@@ -20,9 +21,24 @@ import {
   ConfirmDialogData,
 } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { Cargo, EstadoCargo, Saldos, UsuarioCargo } from '../../../shared/models/cargo.model';
+import { TipoNotificacion } from '../../../shared/models/notificacion.model';
 import { CargoService } from '../cargo.service';
 
 export type FiltroEstado = 'PENDIENTE' | 'TODOS';
+
+/**
+ * Notificaciones que cambian lo que esta página muestra: cargos nuevos o pagados y, como una salida o una
+ * cancelación pueden anular cargos, también esas dos.
+ */
+const TIPOS_QUE_AFECTAN: ReadonlySet<TipoNotificacion> = new Set<TipoNotificacion>([
+  'CARGO_NUEVO',
+  'PAGO_RECIBIDO',
+  'JUGADOR_SALIO',
+  'RESERVA_CANCELADA',
+]);
+
+/** Ventana para agrupar varios push seguidos en un único refresco. */
+const RETARDO_REFRESCO_MS = 300;
 
 const ETIQUETA_ESTADO: Record<EstadoCargo, string> = {
   PENDIENTE: 'Pendiente',
@@ -51,6 +67,7 @@ export class Deudas {
   private readonly cargoService = inject(CargoService);
   private readonly dialog = inject(MatDialog);
   private readonly snack = inject(MatSnackBar);
+  private readonly notificaciones = inject(NotificacionesStore);
 
   protected readonly filtro = signal<FiltroEstado>('PENDIENTE');
   protected readonly saldos = signal<Saldos | null>(null);
@@ -81,6 +98,14 @@ export class Deudas {
         this.meDeben.set(meDeben);
         this.cargando.set(false);
       });
+    // Refresco silencioso (sin spinner, pestaña y filtro intactos) agrupando ráfagas en una sola petición.
+    this.notificaciones.recibidas$
+      .pipe(
+        filter((n) => TIPOS_QUE_AFECTAN.has(n.tipo)),
+        debounceTime(RETARDO_REFRESCO_MS),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => this.cargar$.next(false));
     this.cargar$.next(true);
   }
 
