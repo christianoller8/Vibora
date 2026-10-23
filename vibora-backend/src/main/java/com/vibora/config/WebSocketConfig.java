@@ -1,12 +1,16 @@
 package com.vibora.config;
 
+import com.vibora.websocket.SalidaStompInterceptor;
+import com.vibora.websocket.SesionesWs;
 import com.vibora.websocket.StompAutenticacionInterceptor;
 import com.vibora.websocket.WebSocketProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
@@ -28,6 +32,21 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
 	private final WebSocketProperties propiedades;
 	private final StompAutenticacionInterceptor stompAutenticacionInterceptor;
+	private final SalidaStompInterceptor salidaStompInterceptor;
+	private final SesionesWs sesiones;
+
+	/**
+	 * Planificador propio del WebSocket (latidos del broker y barrido de sesiones caducadas). Con nombre propio para
+	 * no chocar con los planificadores que crea Spring (p. ej. messageBrokerTaskScheduler) ni con otros futuros.
+	 */
+	@Bean
+	ThreadPoolTaskScheduler viboraWsScheduler() {
+		ThreadPoolTaskScheduler planificador = new ThreadPoolTaskScheduler();
+		planificador.setPoolSize(2);
+		planificador.setThreadNamePrefix("vibora-ws-");
+		planificador.setRemoveOnCancelPolicy(true);
+		return planificador;
+	}
 
 	@Override
 	public void registerStompEndpoints(StompEndpointRegistry registro) {
@@ -37,7 +56,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
 	@Override
 	public void configureMessageBroker(MessageBrokerRegistry registro) {
-		registro.enableSimpleBroker("/queue");
+		long latidoMs = propiedades.latido().toMillis();
+		registro.enableSimpleBroker("/queue")
+				.setHeartbeatValue(new long[] { latidoMs, latidoMs })
+				.setTaskScheduler(viboraWsScheduler());
 		registro.setUserDestinationPrefix("/user");
 	}
 
@@ -47,7 +69,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 	}
 
 	@Override
+	public void configureClientOutboundChannel(ChannelRegistration registro) {
+		registro.interceptors(salidaStompInterceptor);
+	}
+
+	@Override
 	public void configureWebSocketTransport(WebSocketTransportRegistration registro) {
 		registro.setMessageSizeLimit(LIMITE_MENSAJE_BYTES);
+		registro.addDecoratorFactory(sesiones.decoradorDeHandler());
 	}
 }

@@ -22,6 +22,7 @@ class NotificacionPush {
 	static final String DESTINO = "/queue/notificaciones";
 
 	private final SimpMessagingTemplate plantilla;
+	private final SesionesWs sesiones;
 
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
 	void alCrearse(NotificacionCreada evento) {
@@ -29,6 +30,8 @@ class NotificacionPush {
 			// recien creada: nunca esta leida. Mismo JSON que GET /api/notificaciones
 			NotificacionResponse cuerpo = new NotificacionResponse(evento.id(), evento.tipo(), evento.mensaje(),
 					evento.reservaId(), false, evento.creadaEn());
+			// nunca se empuja a un socket con el token caducado: se cierra antes (el canal de salida lo vuelve a vigilar)
+			sesiones.expulsarCaducadasDe(evento.usuarioEmail());
 			plantilla.convertAndSendToUser(evento.usuarioEmail(), DESTINO, cuerpo);
 		} catch (RuntimeException ex) {
 			log.warn("No se pudo empujar por WebSocket la notificación {}: {}", evento.id(), ex.toString());

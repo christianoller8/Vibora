@@ -105,6 +105,7 @@ abstract class WebSocketTestBase extends PostgresTestBase {
 	Pista pista;
 	Instant inicio;
 	WebSocketStompClient cliente;
+	final java.util.List<StompSession> abiertas = new java.util.concurrent.CopyOnWriteArrayList<>();
 
 	record Jug(Long id, String email, String token) {
 	}
@@ -127,6 +128,16 @@ abstract class WebSocketTestBase extends PostgresTestBase {
 
 	@AfterEach
 	void limpiarBaseYCliente() {
+		// cliente.stop() no cierra los sockets abiertos: se desconectan uno a uno para que no queden vivos entre tests
+		for (StompSession sesion : abiertas) {
+			try {
+				sesion.disconnect();
+			} catch (RuntimeException yaCerrada) {
+				// IllegalStateException / MessageDeliveryException: el servidor la cerro (p. ej. tras un ERROR) o se
+				// esta cerrando entre medias. Es una limpieza a mejor esfuerzo: nunca debe tumbar el @AfterEach.
+			}
+		}
+		abiertas.clear();
 		cliente.stop();
 		// orden de FK: notificacion/pago -> cargo -> participante -> reserva -> tarifa/pista -> usuario -> club
 		notificaciones.deleteAllInBatch();
@@ -149,7 +160,7 @@ abstract class WebSocketTestBase extends PostgresTestBase {
 		return new Jug(u.getId(), email, login(email));
 	}
 
-	private String login(String email) throws Exception {
+	String login(String email) throws Exception {
 		String cuerpo = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
 						.content("{\"email\":\"%s\",\"password\":\"%s\"}".formatted(email, PASSWORD)))
 				.andReturn().getResponse().getContentAsString();
@@ -259,8 +270,11 @@ abstract class WebSocketTestBase extends PostgresTestBase {
 
 	/** Conecta con el token (como lo haria el navegador en el frame CONNECT) o falla con la excepcion del intento. */
 	StompSession conectar(String autorizacion, Escucha escucha) throws Exception {
-		return cliente.connectAsync(url(), cabecerasHandshake(ORIGEN_PERMITIDO), cabecerasConnect(autorizacion), escucha)
+		StompSession sesion = cliente
+				.connectAsync(url(), cabecerasHandshake(ORIGEN_PERMITIDO), cabecerasConnect(autorizacion), escucha)
 				.get(ESPERA_SEGUNDOS, TimeUnit.SECONDS);
+		abiertas.add(sesion);
+		return sesion;
 	}
 
 	/** Conecta y se suscribe a /user/queue/notificaciones; vuelve cuando la suscripcion ya esta registrada en el broker. */

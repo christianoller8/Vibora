@@ -28,7 +28,8 @@ import java.util.Locale;
  * <li>UNSUBSCRIBE / DISCONNECT: permitidos.</li>
  * <li>Todo lo demas (SEND, ACK, BEGIN...): denegado. El cliente nunca envia nada a la aplicacion ni a otros usuarios.</li>
  * </ul>
- * La identidad se valida al conectar: una conexion ya abierta no se vuelve a comprobar cuando el token caduca.
+ * La identidad se valida al conectar; el instante en que caduca el token se apunta en {@link SesionesWs}, que cierra
+ * el socket cuando llega (un token caducado no mantiene viva una conexion abierta).
  */
 @Component
 @RequiredArgsConstructor
@@ -40,6 +41,7 @@ public class StompAutenticacionInterceptor implements ChannelInterceptor {
 	private final JwtService jwtService;
 	private final JwtAuthenticationConverter convertidor;
 	private final UsuarioRepository usuarios;
+	private final SesionesWs sesiones;
 
 	@Override
 	public Message<?> preSend(Message<?> mensaje, MessageChannel canal) {
@@ -49,7 +51,8 @@ public class StompAutenticacionInterceptor implements ChannelInterceptor {
 			return mensaje; // latidos y mensajes internos que no son frames STOMP
 		}
 		switch (comando) {
-			case CONNECT, STOMP -> accesor.setUser(autenticar(accesor.getFirstNativeHeader("Authorization")));
+			case CONNECT, STOMP -> accesor.setUser(
+						autenticar(accesor.getFirstNativeHeader("Authorization"), accesor.getSessionId()));
 			case SUBSCRIBE -> {
 				if (accesor.getUser() == null) {
 					throw new AccesoStompDenegadoException(AccesoStompDenegadoException.NO_AUTENTICADO);
@@ -67,7 +70,7 @@ public class StompAutenticacionInterceptor implements ChannelInterceptor {
 		return mensaje;
 	}
 
-	private Authentication autenticar(String cabecera) {
+	private Authentication autenticar(String cabecera, String idSesion) {
 		if (cabecera == null || !cabecera.toLowerCase(Locale.ROOT).startsWith(PREFIJO_BEARER)) {
 			throw new AccesoStompDenegadoException(AccesoStompDenegadoException.NO_AUTENTICADO);
 		}
@@ -81,6 +84,9 @@ public class StompAutenticacionInterceptor implements ChannelInterceptor {
 		// igual que /me: el usuario debe seguir existiendo y estar activo
 		usuarios.findByEmail(jwt.getSubject()).filter(Usuario::isActivo)
 				.orElseThrow(() -> new AccesoStompDenegadoException(AccesoStompDenegadoException.NO_AUTENTICADO));
-		return convertidor.convert(jwt);
+		Authentication autenticacion = convertidor.convert(jwt);
+		// El socket sobrevive al token: se apunta cuando caduca para cerrarlo entonces (ver SesionesWs)
+		sesiones.autenticada(idSesion, autenticacion.getName(), jwt.getExpiresAt());
+		return autenticacion;
 	}
 }
