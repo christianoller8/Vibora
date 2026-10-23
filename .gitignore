@@ -1,0 +1,26 @@
+# Backend
+vibora-backend/target/
+vibora-backend/.idea/
+*.iml
+
+# Frontend
+vibora-frontend/node_modules/
+vibora-frontend/dist/
+vibora-frontend/.angular/
+
+# Secretos locales del stack Docker (la plantilla es .env.example)
+.env
+
+# IDE
+.idea/
+
+# Logs
+*.log
+
+# Sistema
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Herramientas locales del asistente (no es código del proyecto)
+.atl/
