@@ -1,0 +1,77 @@
+name: vibora
+
+# Desarrollo (como siempre):  docker compose up -d db
+# Stack completo:             docker compose --profile app up -d --build   (necesita .env, ver .env.example)
+# Los servicios backend y frontend llevan el perfil "app": sin --profile solo arranca la base de datos.
+
+services:
+  db:
+    image: postgres:17
+    container_name: vibora-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-vibora}
+      POSTGRES_USER: ${POSTGRES_USER:-vibora}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vibora}
+    ports:
+      # 5433 en el host: el 5432 lo usa otro proyecto
+      - "5433:5432"
+    volumes:
+      - vibora-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vibora} -d ${POSTGRES_DB:-vibora}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    profiles: ["app"]
+    build:
+      context: ./vibora-backend
+    image: vibora-backend:local
+    restart: unless-stopped
+    environment:
+      # Toda la configuracion por entorno (relaxed binding de Spring). Nada de esto va dentro de la imagen.
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-vibora}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-vibora}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-vibora}
+      # OBLIGATORIO, pero NO con ${VAR:?...}: compose interpola tambien los servicios de perfiles inactivos, y eso
+      # haria fallar `docker compose up -d db` en desarrollo (sin .env). Si falta, el contenedor se niega a arrancar
+      # con un mensaje claro (ver ENTRYPOINT de vibora-backend/Dockerfile) y la app tampoco acepta secretos < 32 bytes.
+      VIBORA_JWT_SECRET: ${VIBORA_JWT_SECRET:-}
+      VIBORA_WEBSOCKET_ORIGENES_PERMITIDOS: http://localhost:${FRONTEND_PORT:-8088}
+      SPRING_JPA_SHOW_SQL: "false"
+      JAVA_OPTS: ${JAVA_OPTS:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    # Sin "ports": el backend solo es alcanzable a traves de nginx (red interna de compose).
+    # Para depurar desde el host, añade temporalmente:  ports: ["127.0.0.1:8081:8081"]  (ojo: choca con el
+    # backend de desarrollo, que usa el 8081; usa otro puerto de host, p. ej. "127.0.0.1:18081:8081").
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8081/actuator/health | grep -q '\"status\":\"UP\"'"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  frontend:
+    profiles: ["app"]
+    build:
+      context: ./vibora-frontend
+    image: vibora-frontend:local
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-8088}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  vibora-pgdata:
