@@ -1,0 +1,61 @@
+<h1>Crear cuenta</h1>
+
+<form [formGroup]="form" (ngSubmit)="enviar()" novalidate>
+  <mat-form-field appearance="outline">
+    <mat-label>Nombre (opcional)</mat-label>
+    <input matInput type="text" name="nombre" formControlName="nombre" autocomplete="given-name" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Apellidos</mat-label>
+    <input
+      matInput
+      type="text"
+      name="apellidos"
+      formControlName="apellidos"
+      autocomplete="family-name"
+    />
+    <mat-error>Los apellidos son obligatorios</mat-error>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Correo electrónico</mat-label>
+    <input matInput type="email" name="email" formControlName="email" autocomplete="email" />
+    @if (form.controls.email.hasError('required')) {
+      <mat-error>El correo electrónico es obligatorio</mat-error>
+    } @else {
+      <mat-error>Introduce un correo electrónico válido</mat-error>
+    }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Contraseña</mat-label>
+    <input
+      matInput
+      type="password"
+      name="password"
+      formControlName="password"
+      autocomplete="new-password"
+    />
+    <mat-hint>Mínimo 8 caracteres, máximo 72 bytes</mat-hint>
+    @if (form.controls.password.hasError('required')) {
+      <mat-error>La contraseña es obligatoria</mat-error>
+    } @else if (form.controls.password.hasError('maxBytes')) {
+      <mat-error>
+        La contraseña no puede superar los 72 bytes (unos 36 caracteres con tildes o ñ)
+      </mat-error>
+    } @else {
+      <mat-error>La contraseña debe tener al menos 8 caracteres</mat-error>
+    }
+  </mat-form-field>
+
+  @if (error(); as mensaje) {
+    <p class="error" role="alert">{{ mensaje }}</p>
+  }
+
+  <button mat-flat-button type="submit" [disabled]="form.invalid || enviando()">
+    {{ enviando() ? 'Creando cuenta…' : 'Crear cuenta' }}
+  </button>
+</form>
+
+<p class="alternativa">¿Ya tienes cuenta? <a routerLink="/login">Inicia sesión</a></p>

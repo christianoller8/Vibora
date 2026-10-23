@@ -1,0 +1,23 @@
+h1 {
+  margin: 0 0 1.5rem;
+  font: var(--mat-sys-headline-small);
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+}
+
+.error {
+  margin: 0 0 1rem;
+  color: var(--mat-sys-error);
+}
+
+button[type='submit'] {
+  align-self: stretch;
+}
+
+.alternativa {
+  margin: 1.5rem 0 0;
+  text-align: center;
+}

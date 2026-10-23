@@ -1,0 +1,35 @@
+<h1>Iniciar sesión</h1>
+
+<form [formGroup]="form" (ngSubmit)="enviar()" novalidate>
+  <mat-form-field appearance="outline">
+    <mat-label>Correo electrónico</mat-label>
+    <input matInput type="email" name="email" formControlName="email" autocomplete="email" />
+    @if (form.controls.email.hasError('required')) {
+      <mat-error>El correo electrónico es obligatorio</mat-error>
+    } @else {
+      <mat-error>Introduce un correo electrónico válido</mat-error>
+    }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Contraseña</mat-label>
+    <input
+      matInput
+      type="password"
+      name="password"
+      formControlName="password"
+      autocomplete="current-password"
+    />
+    <mat-error>La contraseña es obligatoria</mat-error>
+  </mat-form-field>
+
+  @if (error(); as mensaje) {
+    <p class="error" role="alert">{{ mensaje }}</p>
+  }
+
+  <button mat-flat-button type="submit" [disabled]="form.invalid || enviando()">
+    {{ enviando() ? 'Entrando…' : 'Entrar' }}
+  </button>
+</form>
+
+<p class="alternativa">¿No tienes cuenta? <a routerLink="/registro">Regístrate</a></p>

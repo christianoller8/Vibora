@@ -1,0 +1,26 @@
+.pagina {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 1rem;
+  box-sizing: border-box;
+  background: var(--mat-sys-surface-container-low);
+}
+
+.tarjeta {
+  width: 100%;
+  max-width: 26rem;
+  padding: 2rem 1.5rem;
+  border-radius: var(--mat-sys-corner-large);
+  background: var(--mat-sys-surface);
+  box-shadow: var(--mat-sys-level2);
+  box-sizing: border-box;
+}
+
+.marca {
+  margin: 0 0 0.5rem;
+  color: var(--mat-sys-primary);
+  font: var(--mat-sys-headline-medium);
+  font-weight: 500;
+}

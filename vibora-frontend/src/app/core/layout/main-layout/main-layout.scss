@@ -1,0 +1,51 @@
+.contenedor {
+  height: 100vh;
+}
+
+.menu {
+  width: 220px;
+}
+
+.contenido {
+  padding: 1.5rem;
+}
+
+.marca {
+  margin-left: 0.5rem;
+  font-weight: 500;
+}
+
+.separador {
+  flex: 1 1 auto;
+}
+
+.usuario {
+  margin-right: 0.75rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rol {
+  margin-right: 0.5rem;
+  padding: 0.125rem 0.75rem;
+  border-radius: 999px;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+  font: var(--mat-sys-label-medium);
+  white-space: nowrap;
+}
+
+.activo {
+  font-weight: 500;
+}
+
+@media (max-width: 599px) {
+  .contenido {
+    padding: 1rem;
+  }
+
+  .usuario {
+    display: none;
+  }
+}
