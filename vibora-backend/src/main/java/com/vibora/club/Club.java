@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalTime;
 
 @Entity
@@ -37,4 +38,24 @@ public class Club {
 
 	@Column(name = "hora_cierre", nullable = false)
 	private LocalTime horaCierre;
+
+	// ---- datos fiscales (para facturar); nulos hasta que el administrador los configura ----
+
+	@Column(name = "razon_social", length = 200)
+	private String razonSocial;
+
+	@Column(length = 15)
+	private String nif;
+
+	@Column(name = "direccion_fiscal", length = 300)
+	private String direccionFiscal;
+
+	/** IVA incluido en los precios, en %. Por defecto el 21 %. */
+	@Column(name = "tipo_iva", nullable = false, precision = 4, scale = 2)
+	private BigDecimal tipoIva = new BigDecimal("21.00");
+
+	/** true si ya tiene los tres datos fiscales: sin ellos no se puede emitir ninguna factura. */
+	public boolean tieneDatosFiscales() {
+		return razonSocial != null && nif != null && direccionFiscal != null;
+	}
 }
