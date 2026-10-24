@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import java.io.UncheckedIOException;
+import java.time.DateTimeException;
 import java.util.Map;
 
 @RestControllerAdvice
@@ -67,6 +68,14 @@ public class GlobalExceptionHandler {
     // 400: parametro de la URL con un valor imposible (ej. estado=NOPE, fecha=no-es-fecha)
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<Map<String, String>> parametroInvalido(MethodArgumentTypeMismatchException ex) {
+        return ResponseEntity.badRequest()
+                .body(Map.of("error", "Datos no válidos"));
+    }
+
+    // 400: red de seguridad para una fecha que desborda el calendario al operar con ella (los filtros ya se acotan antes
+    // con LimitesFecha); DateTimeParseException es una subclase
+    @ExceptionHandler(DateTimeException.class)
+    public ResponseEntity<Map<String, String>> fechaInvalida(DateTimeException ex) {
         return ResponseEntity.badRequest()
                 .body(Map.of("error", "Datos no válidos"));
     }
