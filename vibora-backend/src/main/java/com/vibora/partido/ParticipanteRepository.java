@@ -11,6 +11,9 @@ public interface ParticipanteRepository extends JpaRepository<Participante, Long
 
 	boolean existsByReservaIdAndUsuarioId(Long reservaId, Long usuarioId);
 
+	/** El usuario juega (o jugo) en alguna reserva de una pista del club. */
+	boolean existsByUsuarioIdAndReservaPistaClubId(Long usuarioId, Long clubId);
+
 	Optional<Participante> findByReservaIdAndUsuarioId(Long reservaId, Long usuarioId);
 
 	/** Puestos (1..4) ya ocupados en la reserva. */
