@@ -1,6 +1,8 @@
 package com.vibora.notificacion;
 
+import com.vibora.incidencia.Incidencia;
 import com.vibora.reserva.Reserva;
+import com.vibora.usuario.Rol;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -23,6 +25,24 @@ public class TextosAviso {
 	public String describir(Reserva reserva) {
 		return reserva.getPista().getNombre() + " de " + reserva.getPista().getClub().getNombre() + " el "
 				+ FECHA_HORA.format(reserva.getInicio().atZone(zona));
+	}
+
+	/** "«Red rota» (Pista 1 de Club A)", o "«Red rota» (Club A)" si no es de una pista concreta. */
+	public String describir(Incidencia incidencia) {
+		String lugar = incidencia.getPista() == null
+				? incidencia.getClub().getNombre()
+				: incidencia.getPista().getNombre() + " de " + incidencia.getClub().getNombre();
+		return "«" + incidencia.getTitulo() + "» (" + lugar + ")";
+	}
+
+	/** "monitor" / "personal de mantenimiento" / "administrador" para frases como "como monitor". */
+	public static String describir(Rol rol) {
+		return switch (rol) {
+			case MONITOR -> "monitor";
+			case MANTENIMIENTO -> "personal de mantenimiento";
+			case ADMIN_CLUB -> "administrador";
+			case JUGADOR -> "jugador";
+		};
 	}
 
 	/** "11,25 €" */

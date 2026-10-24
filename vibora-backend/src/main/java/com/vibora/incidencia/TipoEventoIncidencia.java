@@ -1,0 +1,5 @@
+package com.vibora.incidencia;
+
+public enum TipoEventoIncidencia {
+	CREADA, ASIGNADA, ESTADO, COMENTARIO, PRIORIDAD, FOTO_ANADIDA, FOTO_ELIMINADA, BLOQUEO_CREADO, BLOQUEO_LEVANTADO
+}
