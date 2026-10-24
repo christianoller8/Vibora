@@ -4,7 +4,13 @@ export type TipoNotificacion =
   | 'PARTIDO_COMPLETO'
   | 'CARGO_NUEVO'
   | 'PAGO_RECIBIDO'
-  | 'RESERVA_CANCELADA';
+  | 'RESERVA_CANCELADA'
+  | 'PERSONAL_ANADIDO'
+  | 'PERSONAL_QUITADO'
+  | 'INCIDENCIA_NUEVA'
+  | 'INCIDENCIA_ASIGNADA'
+  | 'INCIDENCIA_ESTADO'
+  | 'INCIDENCIA_COMENTARIO';
 
 export interface Notificacion {
   id: number;

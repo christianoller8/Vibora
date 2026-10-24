@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { NEVER, of } from 'rxjs';
+import { TipoNotificacion } from '../../shared/models/notificacion.model';
 import { crearAuthFalso, crearNotificacion } from '../../testing/test-utils';
 import { AuthService } from '../auth/auth.service';
 import {
@@ -120,6 +121,32 @@ describe('TiempoRealService', () => {
 
       expect(router.navigateByUrl).toHaveBeenCalledWith('/deudas');
       expect(store.marcarLeida).toHaveBeenCalledWith(42);
+    });
+
+    it.each([
+      'PERSONAL_ANADIDO',
+      'PERSONAL_QUITADO',
+      'INCIDENCIA_NUEVA',
+      'INCIDENCIA_ASIGNADA',
+      'INCIDENCIA_ESTADO',
+      'INCIDENCIA_COMENTARIO',
+    ] as TipoNotificacion[])('un push %s se entrega y "Ver" navega y marca leída', async (tipo) => {
+      // como el Router real: una URL que no es string revienta
+      router.navigateByUrl.mockImplementation((url: unknown) => {
+        if (typeof url !== 'string') {
+          throw new TypeError('destino inválido');
+        }
+        return Promise.resolve(true);
+      });
+      crear();
+      await asentar();
+      const nueva = crearNotificacion(77, { tipo });
+
+      opciones[0].alMensaje(JSON.stringify(nueva));
+
+      expect(store.recibir).toHaveBeenCalledWith(nueva);
+      expect(router.navigateByUrl).toHaveBeenCalledWith('/agenda');
+      expect(store.marcarLeida).toHaveBeenCalledWith(77);
     });
 
     it('si no se pulsa "Ver" no navega ni marca nada', async () => {

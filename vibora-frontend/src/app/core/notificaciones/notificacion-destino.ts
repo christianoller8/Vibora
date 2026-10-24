@@ -1,6 +1,12 @@
 import { TipoNotificacion } from '../../shared/models/notificacion.model';
 
-/** Pantalla a la que lleva cada tipo de notificación. */
+/** Pantalla a la que cae cualquier tipo que este frontend aún no conoce (p. ej. de un backend más nuevo). */
+export const DESTINO_POR_DEFECTO = '/agenda';
+
+/**
+ * Pantalla a la que lleva cada tipo de notificación. Siempre devuelve una ruta: el `switch` es exhaustivo en
+ * compilación (un tipo nuevo sin mapear no compila) y el `default` cubre en ejecución un tipo desconocido.
+ */
 export function destinoNotificacion(tipo: TipoNotificacion): string {
   switch (tipo) {
     case 'CARGO_NUEVO':
@@ -11,5 +17,18 @@ export function destinoNotificacion(tipo: TipoNotificacion): string {
     case 'PARTIDO_COMPLETO':
     case 'RESERVA_CANCELADA':
       return '/mis-reservas';
+    // Por ahora no hay pantallas de incidencias: las de incidencias tomarán el relevo de estos destinos.
+    case 'PERSONAL_ANADIDO':
+    case 'PERSONAL_QUITADO':
+    case 'INCIDENCIA_NUEVA':
+    case 'INCIDENCIA_ASIGNADA':
+    case 'INCIDENCIA_ESTADO':
+    case 'INCIDENCIA_COMENTARIO':
+      return '/agenda';
+    default: {
+      const _exhaustivo: never = tipo;
+      void _exhaustivo;
+      return DESTINO_POR_DEFECTO;
+    }
   }
 }

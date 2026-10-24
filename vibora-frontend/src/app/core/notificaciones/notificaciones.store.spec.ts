@@ -114,6 +114,16 @@ describe('NotificacionesStore', () => {
       expect(store.noLeidas()).toBe(3);
     });
 
+    it('acepta los tipos de personal e incidencias', () => {
+      const store = crear();
+
+      store.recibir(crearNotificacion(10, { tipo: 'INCIDENCIA_NUEVA' }));
+      store.recibir(crearNotificacion(11, { tipo: 'PERSONAL_QUITADO' }));
+
+      expect(store.items().map((n) => n.id)).toEqual([11, 10, 3, 2, 1]);
+      expect(store.noLeidas()).toBe(4);
+    });
+
     it('descarta duplicados por id sin volver a contar', () => {
       const store = crear();
 

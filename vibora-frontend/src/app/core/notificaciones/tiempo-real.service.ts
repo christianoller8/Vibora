@@ -104,8 +104,11 @@ export class TiempoRealService {
       .open(notificacion.mensaje, 'Ver', { duration: 8000 })
       .onAction()
       .subscribe(() => {
-        void this.router.navigateByUrl(destinoNotificacion(notificacion.tipo));
         this.store.marcarLeida(notificacion.id);
+        const destino = destinoNotificacion(notificacion.tipo);
+        if (destino) {
+          void this.router.navigateByUrl(destino);
+        }
       });
   }
 

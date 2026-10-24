@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { signal } from '@angular/core';
-import { Notificacion } from '../../../shared/models/notificacion.model';
+import { Notificacion, TipoNotificacion } from '../../../shared/models/notificacion.model';
 import { crearNotificacion } from '../../../testing/test-utils';
 import { NotificacionesStore } from '../notificaciones.store';
 import { Campana } from './campana';
@@ -125,6 +125,29 @@ describe('Campana', () => {
     expect(store.marcarLeida).not.toHaveBeenCalled();
     expect(navegar).toHaveBeenCalledWith('/mis-reservas');
   });
+
+  it.each(['PERSONAL_ANADIDO', 'INCIDENCIA_NUEVA', 'INCIDENCIA_COMENTARIO'] as TipoNotificacion[])(
+    'una notificación %s se marca leída y navega sin lanzar',
+    async (tipo) => {
+      await crear([crearNotificacion(9, { tipo })], 1);
+      // como el Router real: una URL que no es string revienta
+      const navegar = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockImplementation(((
+        url: unknown,
+      ) => {
+        if (typeof url !== 'string') {
+          throw new TypeError('destino inválido');
+        }
+        return Promise.resolve(true);
+      }) as Router['navigateByUrl']);
+      await abrir();
+
+      filas()[0].click();
+      await fixture.whenStable();
+
+      expect(store.marcarLeida).toHaveBeenCalledWith(9);
+      expect(navegar).toHaveBeenCalledWith('/agenda');
+    },
+  );
 
   it('"Marcar todas como leídas" llama al store y está deshabilitado sin no leídas', async () => {
     await crear([crearNotificacion(1)], 1);

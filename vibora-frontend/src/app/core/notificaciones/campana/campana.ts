@@ -46,7 +46,10 @@ export class Campana {
     if (!notificacion.leida) {
       this.store.marcarLeida(notificacion.id);
     }
-    void this.router.navigateByUrl(destinoNotificacion(notificacion.tipo));
+    const destino = destinoNotificacion(notificacion.tipo);
+    if (destino) {
+      void this.router.navigateByUrl(destino);
+    }
   }
 
   protected marcarTodas(evento: Event): void {
