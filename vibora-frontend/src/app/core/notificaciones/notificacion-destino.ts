@@ -25,6 +25,9 @@ export function destinoNotificacion(tipo: TipoNotificacion): string {
     case 'INCIDENCIA_ESTADO':
     case 'INCIDENCIA_COMENTARIO':
       return '/agenda';
+    // Por ahora no hay pantalla de facturas: la de facturas tomará el relevo de este destino.
+    case 'FACTURA_RECTIFICATIVA':
+      return '/agenda';
     default: {
       const _exhaustivo: never = tipo;
       void _exhaustivo;

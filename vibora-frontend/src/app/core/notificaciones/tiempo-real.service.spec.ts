@@ -130,6 +130,7 @@ describe('TiempoRealService', () => {
       'INCIDENCIA_ASIGNADA',
       'INCIDENCIA_ESTADO',
       'INCIDENCIA_COMENTARIO',
+      'FACTURA_RECTIFICATIVA',
     ] as TipoNotificacion[])('un push %s se entrega y "Ver" navega y marca leída', async (tipo) => {
       // como el Router real: una URL que no es string revienta
       router.navigateByUrl.mockImplementation((url: unknown) => {

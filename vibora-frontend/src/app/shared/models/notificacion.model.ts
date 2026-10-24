@@ -10,7 +10,8 @@ export type TipoNotificacion =
   | 'INCIDENCIA_NUEVA'
   | 'INCIDENCIA_ASIGNADA'
   | 'INCIDENCIA_ESTADO'
-  | 'INCIDENCIA_COMENTARIO';
+  | 'INCIDENCIA_COMENTARIO'
+  | 'FACTURA_RECTIFICATIVA';
 
 export interface Notificacion {
   id: number;
