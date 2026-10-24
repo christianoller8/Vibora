@@ -15,7 +15,7 @@ import java.util.List;
  * Rejilla de casillas de un club: empiezan a la hora de apertura y se encadenan cada "duracion"
  * hasta que la ultima termina como tarde a la hora de cierre, todo el mismo dia local.
  */
-final class ParrillaHoraria {
+public final class ParrillaHoraria {
 
 	private ParrillaHoraria() {
 	}
@@ -39,8 +39,8 @@ final class ParrillaHoraria {
 		}
 	}
 
-	/** Inicios de todas las casillas del dia local indicado. */
-	static List<Instant> inicios(Club club, LocalDate fecha, Duration duracion, ZoneId zona) {
+	/** Inicios de todas las casillas del dia local indicado (publico: tambien lo usan las metricas de ocupacion). */
+	public static List<Instant> inicios(Club club, LocalDate fecha, Duration duracion, ZoneId zona) {
 		long paso = duracion.toSeconds();
 		long cierre = club.getHoraCierre().toSecondOfDay();
 		List<Instant> inicios = new ArrayList<>();

@@ -1,0 +1,15 @@
+-- V6: indice de las metricas del club (fase 3, rebanada 4).
+--
+-- Las metricas leen, en UNA consulta, las reservas (de cualquier estado) de las pistas de un club cuyo inicio cae en un
+-- rango de fechas:
+--   select r.pista_id, r.inicio, r.estado, r.precio_total from reserva r join pista p on p.id = r.pista_id
+--   where p.club_id = ? and r.inicio >= ? and r.inicio < ?
+-- Hasta V5 la tabla reserva solo tenia la clave primaria, reserva_usuario_id_idx y el indice gist de reserva_sin_solape
+-- (pista_id, tstzrange(inicio, fin)) parcial a las CONFIRMADAS: ninguno sirve para filtrar por pista + rango de inicio
+-- (el gist esta sobre una expresion y excluye las canceladas, que las metricas tambien necesitan), asi que cada consulta
+-- recorria TODAS las reservas de TODOS los clubes. Con este btree se leen solo las de las pistas del club en el rango.
+--
+-- No es parcial a proposito: la consulta lee confirmadas y canceladas a la vez, y un indice parcial por estado no se
+-- puede usar sin fijar el estado en la consulta. No hace falta otro indice para bloqueo_pista (ya tiene (pista_id,
+-- levantado_en) y es una tabla pequena) ni para factura (V5 ya creo factura_club_emitida_idx sobre (club_id, emitida_en)).
+CREATE INDEX reserva_pista_inicio_idx ON reserva (pista_id, inicio);
