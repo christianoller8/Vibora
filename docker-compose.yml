@@ -63,8 +63,12 @@ services:
       # a arrancar sin secreto y la app tampoco acepta secretos de menos de 32 bytes.
       VIBORA_JWT_SECRET: ${VIBORA_JWT_SECRET:-}
       VIBORA_WEBSOCKET_ORIGENES_PERMITIDOS: http://localhost:${FRONTEND_PORT:-8088}
+      # Fotos de incidencias: los ficheros viven en el volumen vibora-uploads, no dentro del contenedor
+      VIBORA_ALMACEN_DIRECTORIO: /data/uploads
       SPRING_JPA_SHOW_SQL: "false"
       JAVA_OPTS: ${JAVA_OPTS:-}
+    volumes:
+      - vibora-uploads:/data/uploads
     depends_on:
       comprobar-VIBORA_JWT_SECRET:
         condition: service_completed_successfully
@@ -100,3 +104,4 @@ services:
 
 volumes:
   vibora-pgdata:
+  vibora-uploads:

@@ -3,6 +3,10 @@ vibora-backend/target/
 vibora-backend/.idea/
 *.iml
 
+# Fotos subidas en local (vibora.almacen.directorio, por defecto ./data/uploads; segun desde donde se arranque)
+vibora-backend/data/
+/data/
+
 # Frontend
 vibora-frontend/node_modules/
 vibora-frontend/dist/

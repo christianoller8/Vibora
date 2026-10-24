@@ -41,7 +41,25 @@ docker compose --profile app stop backend frontend   # para solo la app; la base
 docker compose --profile app up -d --build           # la vuelve a levantar (reconstruye si hay cambios)
 ```
 
-> No uses `docker compose down -v` si quieres conservar los datos: `-v` borra el volumen `vibora-pgdata`.
+> No uses `docker compose down -v` si quieres conservar los datos: `-v` borra el volumen `vibora-pgdata` **y**
+> `vibora-uploads` (las fotos de las incidencias).
+
+### Fotos de incidencias
+
+Las fotos (JPEG, PNG o WebP, hasta 5 MB y 4 por incidencia) se guardan como ficheros, no en la base de datos, en la
+carpeta `vibora.almacen.directorio`:
+
+- **Desarrollo local**: `./data/uploads` relativo a donde arranques el backend (`vibora-backend/data/uploads` con
+  `./mvnw spring-boot:run`). La carpeta se crea sola y está en `.gitignore`.
+- **Docker**: el servicio `backend` monta el volumen con nombre `vibora-uploads` en `/data/uploads`
+  (`VIBORA_ALMACEN_DIRECTORIO`), y la imagen deja esa carpeta a nombre del usuario sin privilegios. Sobrevive a
+  `docker compose --profile app up -d --build`; solo `down -v` lo borra. Para copiarlo: `docker run --rm -v
+  vibora_vibora-uploads:/datos -v "$PWD":/copia alpine tar czf /copia/uploads.tgz -C /datos .`
+
+Las fotos se recodifican al subirlas (se pierden EXIF y GPS; los WebP se guardan tal cual, con sus metadatos). Se
+descargan con `GET /api/incidencias/{id}/fotos/{fotoId}`, que exige el JWT: un `<img src>` no puede enviar la cabecera
+`Authorization`, así que el frontend debe pedirlas con `HttpClient` como blob. El nginx del frontend debe permitir
+cuerpos de al menos 6 MB en `/api` (`client_max_body_size 6m;`; por defecto nginx corta en 1 MB).
 
 El script de datos de ejemplo también sirve contra este stack (entra por nginx, que es `localhost`):
 `node scripts/seed-dev.mjs --base-url http://localhost:8088`.

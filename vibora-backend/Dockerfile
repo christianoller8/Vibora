@@ -27,6 +27,9 @@ RUN --mount=type=cache,target=/root/.m2 \
 FROM eclipse-temurin:25-jre-alpine AS runtime
 
 RUN addgroup -S vibora && adduser -S -G vibora -H -s /sbin/nologin vibora
+# Carpeta de las fotos subidas, propiedad del usuario sin privilegios. Un volumen con nombre montado aqui hereda este
+# propietario la primera vez (docker-compose.yml: vibora-uploads); sin volumen, los ficheros viven y mueren con el contenedor.
+RUN mkdir -p /data/uploads && chown -R vibora:vibora /data
 WORKDIR /app
 
 COPY --from=build --chown=vibora:vibora /build/extracted/dependencies/ ./
@@ -39,6 +42,7 @@ USER vibora
 # Sin secretos en la imagen: la configuracion llega por entorno (SPRING_DATASOURCE_*, VIBORA_JWT_SECRET,
 # VIBORA_WEBSOCKET_ORIGENES_PERMITIDOS...). Opciones extra de la JVM: JAVA_OPTS.
 ENV JAVA_OPTS=""
+ENV VIBORA_ALMACEN_DIRECTORIO=/data/uploads
 EXPOSE 8081
 
 HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=5 \
