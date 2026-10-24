@@ -17,7 +17,7 @@ Base de datos, backend y frontend (nginx) en contenedores. Los dos últimos vive
 flujo de desarrollo de arriba no cambia: `docker compose up -d db` sigue levantando solo PostgreSQL.
 
 ```bash
-cp env.example .env        # edita .env: pon un VIBORA_JWT_SECRET propio (el fichero explica cómo generarlo)
+cp .env.example .env       # edita .env: pon un VIBORA_JWT_SECRET propio (el fichero explica cómo generarlo)
 docker compose --profile app up -d --build
 ```
 
@@ -26,7 +26,7 @@ La web queda en http://localhost:8088 (cambia el puerto con `FRONTEND_PORT` en `
 
 `VIBORA_JWT_SECRET` es obligatorio. Un servicio de comprobación (`comprobar-VIBORA_JWT_SECRET`, solo con el perfil
 `app`) corre antes que el backend y aborta el `up` al instante si el secreto está vacío, tiene menos de 32 caracteres o
-sigue siendo el marcador `CAMBIAME-...` de `env.example`:
+sigue siendo el marcador `CAMBIAME-...` de `.env.example`:
 
 ```text
 service "comprobar-VIBORA_JWT_SECRET" didn't complete successfully: exit 1
