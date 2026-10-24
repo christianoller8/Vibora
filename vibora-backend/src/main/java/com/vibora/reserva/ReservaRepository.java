@@ -16,6 +16,9 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 	boolean existsByPistaIdAndEstadoAndInicioLessThanAndFinGreaterThan(Long pistaId, EstadoReserva estado,
 			Instant fin, Instant inicio);
 
+	/** El usuario ha reservado (en cualquier estado) alguna pista del club. */
+	boolean existsByUsuarioIdAndPistaClubId(Long usuarioId, Long clubId);
+
 	/** Reservas del estado dado que solapan [desde, hasta). */
 	List<Reserva> findByPistaIdAndEstadoAndInicioLessThanAndFinGreaterThan(Long pistaId, EstadoReserva estado,
 			Instant hasta, Instant desde);
@@ -46,6 +49,30 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 			order by r.inicio, r.id
 			""")
 	List<Reserva> partidosAbiertos(Instant ahora, Instant desde, Instant hasta, Long clubId);
+
+	/**
+	 * Reservas AFECTADAS por un bloqueo de la pista: confirmadas, que aun no han empezado ({@code inicio > ahora}) y
+	 * que solapan [desde, hasta). Las adyacentes no cuentan (intervalos semiabiertos). Un bloqueo sin fin se consulta
+	 * con un {@code hasta} lejano (PostgreSQL no tipa un parametro nulo en "? is null"). Con organizador y jugadores
+	 * en la misma consulta.
+	 */
+	@EntityGraph(attributePaths = { "usuario", "participantes", "participantes.usuario" })
+	@Query("""
+			select r from Reserva r
+			where r.pista.id = :pistaId and r.estado = com.vibora.reserva.EstadoReserva.CONFIRMADA
+			  and r.inicio > :ahora and r.fin > :desde and r.inicio < :hasta
+			order by r.inicio, r.id
+			""")
+	List<Reserva> afectadasPorBloqueo(Long pistaId, Instant ahora, Instant desde, Instant hasta);
+
+	/** Los ids de las mismas, en orden ascendente: el orden en el que se bloquean para cancelarlas (sin interbloqueos). */
+	@Query("""
+			select r.id from Reserva r
+			where r.pista.id = :pistaId and r.estado = com.vibora.reserva.EstadoReserva.CONFIRMADA
+			  and r.inicio > :ahora and r.fin > :desde and r.inicio < :hasta
+			order by r.id
+			""")
+	List<Long> idsAfectadasPorBloqueo(Long pistaId, Instant ahora, Instant desde, Instant hasta);
 
 	/** Reservas (cualquier estado) del club que empiezan en [desde, hasta). */
 	List<Reserva> findByPistaClubIdAndInicioGreaterThanEqualAndInicioLessThanOrderByInicioAscIdAsc(Long clubId,

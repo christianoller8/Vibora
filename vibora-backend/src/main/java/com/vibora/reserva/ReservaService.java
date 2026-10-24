@@ -1,6 +1,8 @@
 package com.vibora.reserva;
 
 import com.vibora.auth.AutorizacionClub;
+import com.vibora.bloqueo.BloqueoPista;
+import com.vibora.bloqueo.BloqueoPistaRepository;
 import com.vibora.cargo.Cargo;
 import com.vibora.cargo.CargoRepository;
 import com.vibora.cargo.EstadoCargo;
@@ -50,6 +52,7 @@ public class ReservaService {
 	private final TarifaFranjaRepository tarifas;
 	private final AutorizacionClub autorizacion;
 	private final ParticipanteRepository participantes;
+	private final BloqueoPistaRepository bloqueos;
 	private final CargoRepository cargos;
 	private final NotificacionService notificaciones;
 	private final TextosAviso textos;
@@ -58,10 +61,19 @@ public class ReservaService {
 	private final Clock reloj;
 	private final ZoneId zona;
 
+	/**
+	 * Reservar contra bloquear la pista: antes de mirar los bloqueos se toma un bloqueo COMPARTIDO de la fila de la pista
+	 * (FOR SHARE). Varias reservas a la vez no se estorban (la restriccion reserva_sin_solape sigue protegiendo cada
+	 * casilla), pero crear un bloqueo pide el bloqueo exclusivo de esa fila: espera a las reservas en curso y las que
+	 * llegan despues esperan a que termine, y entonces ven el bloqueo. Asi no hay reserva que se cuele entre el calculo
+	 * de las "afectadas" y la confirmacion del bloqueo. Orden de bloqueos: pista (compartido) y despues lo de siempre;
+	 * ninguna otra operacion pide una fila de reserva, de cargo o de usuario ANTES que la de pista.
+	 */
 	@Transactional
 	public ReservaResponse crear(Long clubId, Long pistaId, ReservaRequest peticion) {
 		Club club = buscarClub(clubId);
-		Pista pista = buscarPista(clubId, pistaId);
+		Pista pista = pistas.findByIdAndClubIdParaCompartir(pistaId, clubId)
+				.orElseThrow(() -> new RecursoNoEncontradoException("Pista no encontrada"));
 		Usuario usuario = autorizacion.usuarioActual();
 		if (!pista.isActiva()) {
 			throw new ConflictoException("La pista no está activa");
@@ -70,8 +82,12 @@ public class ReservaService {
 		Instant inicio = peticion.inicio();
 		Instant fin = inicio.plus(duracion);
 		ParrillaHoraria.validar(club, inicio, duracion, zona);
-		if (!inicio.isAfter(reloj.instant())) {
+		Instant ahora = reloj.instant();
+		if (!inicio.isAfter(ahora)) {
 			throw new IllegalArgumentException("No se puede reservar una casilla que ya ha empezado");
+		}
+		if (bloqueos.haySolape(pistaId, inicio, fin, ahora)) {
+			throw new ConflictoException("La pista no está disponible por mantenimiento");
 		}
 		BigDecimal precio = calculadora.calcular(tarifas.findByClubId(clubId), inicio, fin, zona);
 
@@ -120,12 +136,16 @@ public class ReservaService {
 				EstadoReserva.CONFIRMADA, inicioDelDia(fecha.plusDays(1)), inicioDelDia(fecha));
 		List<TarifaFranja> franjas = tarifas.findByClubId(clubId);
 		Instant ahora = reloj.instant();
+		List<BloqueoPista> bloqueados = bloqueos.activosEntre(pistaId, inicioDelDia(fecha), inicioDelDia(fecha.plusDays(1)),
+				ahora);
 
 		return ParrillaHoraria.inicios(club, fecha, duracion, zona).stream().map(inicio -> {
 			Instant fin = inicio.plus(duracion);
-			boolean libre = pista.isActiva() && inicio.isAfter(ahora)
+			boolean bloqueada = bloqueados.stream()
+					.anyMatch(b -> b.getDesde().isBefore(fin) && (b.getHasta() == null || b.getHasta().isAfter(inicio)));
+			boolean libre = pista.isActiva() && inicio.isAfter(ahora) && !bloqueada
 					&& ocupadas.stream().noneMatch(r -> r.getInicio().isBefore(fin) && r.getFin().isAfter(inicio));
-			return new CasillaAgenda(inicio, fin, libre, precioONulo(franjas, inicio, fin));
+			return new CasillaAgenda(inicio, fin, libre, precioONulo(franjas, inicio, fin), bloqueada);
 		}).toList();
 	}
 
@@ -159,8 +179,21 @@ public class ReservaService {
 			throw new ConflictoException("Fuera del plazo de cancelación");
 		}
 		reserva.setEstado(EstadoReserva.CANCELADA);
-		liquidarCargosYAvisar(reserva, usuario);
+		liquidarCargosYAvisar(reserva, usuario, false);
 		return ReservaResponse.de(reservas.save(reserva));
+	}
+
+	/**
+	 * Cancelacion del club por mantenimiento (la dispara el administrador desde un bloqueo de pista). Reutiliza la
+	 * logica de cancelar: cargos pendientes a ANULADO, pagados a REEMBOLSADO y un aviso RESERVA_CANCELADA a cada jugador
+	 * (organizador incluido) salvo a quien cancela. El llamador tiene que haber BLOQUEADO la fila de la reserva
+	 * (findByIdParaActualizar) y comprobado que sigue confirmada y futura.
+	 */
+	@Transactional
+	public void cancelarPorMantenimiento(Reserva reserva, Usuario administrador) {
+		reserva.setEstado(EstadoReserva.CANCELADA);
+		liquidarCargosYAvisar(reserva, administrador, true);
+		reservas.save(reserva);
 	}
 
 	/**
@@ -168,7 +201,7 @@ public class ReservaService {
 	 * jugador salvo a quien cancela (nunca se avisa a si mismo). El organizador solo queda sin aviso cuando es el
 	 * quien cancela; si cancela el administrador del club, el organizador tambien se entera.
 	 */
-	private void liquidarCargosYAvisar(Reserva reserva, Usuario quienCancela) {
+	private void liquidarCargosYAvisar(Reserva reserva, Usuario quienCancela, boolean porMantenimiento) {
 		for (Cargo cargo : cargos.findByReservaId(reserva.getId())) {
 			if (cargo.getEstado() == EstadoCargo.PENDIENTE) {
 				cargo.setEstado(EstadoCargo.ANULADO);
@@ -176,9 +209,9 @@ public class ReservaService {
 				cargo.setEstado(EstadoCargo.REEMBOLSADO);
 			}
 		}
-		boolean cancelaElClub = !reserva.getUsuario().getId().equals(quienCancela.getId());
+		boolean cancelaElClub = porMantenimiento || !reserva.getUsuario().getId().equals(quienCancela.getId());
 		String mensaje = (cancelaElClub ? "El club ha cancelado la reserva (%s)" : "Se ha cancelado la reserva (%s)")
-				.formatted(textos.describir(reserva));
+				.formatted(textos.describir(reserva)) + (porMantenimiento ? " por mantenimiento de la pista" : "");
 		for (Participante p : participantes.findByReservaIdOrderByPuesto(reserva.getId())) {
 			if (!p.getUsuario().getId().equals(quienCancela.getId())) {
 				notificaciones.notificar(p.getUsuario(), TipoNotificacion.RESERVA_CANCELADA, mensaje, reserva);
