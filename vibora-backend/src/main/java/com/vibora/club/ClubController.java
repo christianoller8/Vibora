@@ -42,4 +42,16 @@ public class ClubController {
 	public ClubResponse actualizar(@PathVariable Long id, @Valid @RequestBody ClubRequest peticion) {
 		return clubService.actualizar(id, peticion);
 	}
+
+	/** Datos fiscales del club (solo su administrador): lo que sale como emisor en las facturas. */
+	@GetMapping("/{id}/datos-fiscales")
+	public DatosFiscalesResponse datosFiscales(@PathVariable Long id) {
+		return clubService.datosFiscales(id);
+	}
+
+	@PutMapping("/{id}/datos-fiscales")
+	public DatosFiscalesResponse actualizarDatosFiscales(@PathVariable Long id,
+			@Valid @RequestBody DatosFiscalesRequest peticion) {
+		return clubService.actualizarDatosFiscales(id, peticion);
+	}
 }

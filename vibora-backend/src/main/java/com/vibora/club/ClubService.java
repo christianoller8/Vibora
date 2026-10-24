@@ -61,6 +61,35 @@ public class ClubService {
 		return ClubResponse.de(clubs.save(club));
 	}
 
+	/** Orden: 404 si el club no existe y 403 si no es su administrador. */
+	@Transactional(readOnly = true)
+	public DatosFiscalesResponse datosFiscales(Long id) {
+		Club club = buscar(id);
+		autorizacion.exigirAdminDe(id);
+		return DatosFiscalesResponse.de(club);
+	}
+
+	/**
+	 * Configura los datos fiscales (los tres son obligatorios). Orden: 404 -> 403 -> 400 por datos (NIF/CIF mal formado).
+	 * Cambiarlos no altera las facturas ya emitidas: llevan una copia de los datos del momento. Sin {@code tipoIva} se
+	 * conserva el actual.
+	 */
+	@Transactional
+	public DatosFiscalesResponse actualizarDatosFiscales(Long id, DatosFiscalesRequest peticion) {
+		Club club = buscar(id);
+		autorizacion.exigirAdminDe(id);
+		if (!ValidadorNif.esValido(peticion.nif())) {
+			throw new IllegalArgumentException("El NIF/CIF no es válido");
+		}
+		club.setRazonSocial(peticion.razonSocial().trim());
+		club.setNif(ValidadorNif.normalizar(peticion.nif()));
+		club.setDireccionFiscal(peticion.direccionFiscal().trim());
+		if (peticion.tipoIva() != null) {
+			club.setTipoIva(peticion.tipoIva().setScale(2));
+		}
+		return DatosFiscalesResponse.de(clubs.save(club));
+	}
+
 	private Club buscar(Long id) {
 		return clubs.findById(id).orElseThrow(() -> new RecursoNoEncontradoException("Club no encontrado"));
 	}
