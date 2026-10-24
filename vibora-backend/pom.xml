@@ -72,6 +72,18 @@
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+		<!-- PDF de las facturas. Se excluye brotli4j (nativos para fuentes WOFF2): no se incrustan fuentes. -->
+		<dependency>
+			<groupId>com.github.librepdf</groupId>
+			<artifactId>openpdf</artifactId>
+			<version>3.0.5</version>
+			<exclusions>
+				<exclusion>
+					<groupId>com.aayushatharva.brotli4j</groupId>
+					<artifactId>brotli4j</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
@@ -110,6 +122,13 @@
 		<dependency>
 			<groupId>org.testcontainers</groupId>
 			<artifactId>testcontainers-postgresql</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!-- Extrae el texto de los PDF de las facturas para comprobar su contenido en los tests -->
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>pdfbox</artifactId>
+			<version>3.0.8</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
