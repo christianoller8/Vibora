@@ -49,8 +49,22 @@ public class AutorizacionClub {
 		return usuario;
 	}
 
-	private static boolean esAdminDe(Usuario usuario, Long clubId) {
+	public static boolean esAdminDe(Usuario usuario, Long clubId) {
 		return usuario.getRol() == Rol.ADMIN_CLUB
+				&& usuario.getClub() != null
+				&& usuario.getClub().getId().equals(clubId);
+	}
+
+	/** true si el usuario es personal (monitor, mantenimiento o administrador) del club indicado. */
+	public static boolean esPersonalDe(Usuario usuario, Long clubId) {
+		return usuario.getRol() != Rol.JUGADOR
+				&& usuario.getClub() != null
+				&& usuario.getClub().getId().equals(clubId);
+	}
+
+	/** true si el usuario es de mantenimiento de ESE club. */
+	public static boolean esMantenimientoDe(Usuario usuario, Long clubId) {
+		return usuario.getRol() == Rol.MANTENIMIENTO
 				&& usuario.getClub() != null
 				&& usuario.getClub().getId().equals(clubId);
 	}
