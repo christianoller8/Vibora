@@ -10,6 +10,7 @@ import com.vibora.club.Club;
 import com.vibora.club.ClubRepository;
 import com.vibora.common.exception.ConflictoException;
 import com.vibora.common.exception.RecursoNoEncontradoException;
+import com.vibora.factura.FacturaService;
 import com.vibora.notificacion.NotificacionService;
 import com.vibora.notificacion.TextosAviso;
 import com.vibora.notificacion.TipoNotificacion;
@@ -55,6 +56,7 @@ public class ReservaService {
 	private final BloqueoPistaRepository bloqueos;
 	private final CargoRepository cargos;
 	private final NotificacionService notificaciones;
+	private final FacturaService facturaService;
 	private final TextosAviso textos;
 	private final CalculadoraPrecio calculadora;
 	private final ReservaProperties propiedades;
@@ -180,19 +182,22 @@ public class ReservaService {
 		}
 		reserva.setEstado(EstadoReserva.CANCELADA);
 		liquidarCargosYAvisar(reserva, usuario, false);
+		facturaService.rectificarSiFacturada(reserva); // ultimo bloqueo de fila: el contador de facturas
 		return ReservaResponse.de(reservas.save(reserva));
 	}
 
 	/**
 	 * Cancelacion del club por mantenimiento (la dispara el administrador desde un bloqueo de pista). Reutiliza la
 	 * logica de cancelar: cargos pendientes a ANULADO, pagados a REEMBOLSADO y un aviso RESERVA_CANCELADA a cada jugador
-	 * (organizador incluido) salvo a quien cancela. El llamador tiene que haber BLOQUEADO la fila de la reserva
-	 * (findByIdParaActualizar) y comprobado que sigue confirmada y futura.
+	 * (organizador incluido) salvo a quien cancela y, si la reserva estaba facturada, emite su factura rectificativa. El
+	 * llamador tiene que haber BLOQUEADO la fila de la reserva (findByIdParaActualizar) y comprobado que sigue confirmada y
+	 * futura; si cancela varias en un lote, tiene que bloquearlas TODAS antes de cancelar la primera (ver BloqueoService).
 	 */
 	@Transactional
 	public void cancelarPorMantenimiento(Reserva reserva, Usuario administrador) {
 		reserva.setEstado(EstadoReserva.CANCELADA);
 		liquidarCargosYAvisar(reserva, administrador, true);
+		facturaService.rectificarSiFacturada(reserva); // ultimo bloqueo de fila: el contador de facturas
 		reservas.save(reserva);
 	}
 

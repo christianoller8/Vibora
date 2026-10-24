@@ -44,8 +44,11 @@ import java.util.Optional;
  * afectadas y la confirmacion del bloqueo.</li>
  * <li><b>Levantar</b> (a mano o al cambiar la incidencia): fila del bloqueo (exclusivo) y despues el evento. Dos
  * levantamientos a la vez no duplican el evento.</li>
- * <li><b>Cancelar afectadas</b>: reservas en orden ASCENDENTE de id (una a una, con findByIdParaActualizar) -> sus
- * cargos, que es el orden de cancelar y pagar (reserva y luego cargo). No bloquea la fila del bloqueo. Dos
+ * <li><b>Cancelar afectadas</b>: PRIMERO todas las reservas en orden ASCENDENTE de id (una a una, con
+ * findByIdParaActualizar) y SOLO DESPUES, ya con todas bloqueadas, cancelar cada una -> sus cargos -> (si estaba
+ * facturada) el contador de facturas, que es el orden de cancelar y pagar (reserva, cargo, contador). Bloquear todas
+ * antes de tocar ninguna es lo que impide que el lote retenga el contador mientras espera a otra reserva. No bloquea
+ * la fila del bloqueo. Dos
  * cancelaciones a la vez (del mismo bloqueo o de bloqueos distintos que solapan las mismas reservas) esperan en la
  * primera reserva comun, la releen ya canceladas y las saltan (sigueAfectada): ni doble reembolso ni doble aviso, y al
  * ir todas en el mismo orden no hay interbloqueo.</li>
@@ -240,14 +243,21 @@ public class BloqueoService {
 		// Solo ids (sin cargar las reservas): al bloquear cada fila se lee su estado ACTUAL, no uno viejo de la sesion
 		List<Long> candidatas = reservas.idsAfectadasPorBloqueo(pistaId, ahora, bloqueo.getDesde(),
 				finEfectivo(bloqueo.getHasta()));
-		List<Long> canceladas = new ArrayList<>();
+		// Fase 1: se BLOQUEAN todas, en orden ascendente, antes de cancelar ninguna. Cancelar una reserva facturada toma el
+		// contador de facturas, que se conserva hasta el commit: si se cancelase reserva a reserva, el lote tendria el
+		// contador mientras espera a la siguiente, y quien tuviese esa reserva y quisiera el contador cerraria un ciclo.
+		List<Reserva> bloqueadas = new ArrayList<>();
 		for (Long id : candidatas) { // ya en orden ascendente
 			Reserva reserva = reservas.findByIdParaActualizar(id).orElse(null);
-			if (reserva == null || !sigueAfectada(reserva, bloqueo, ahora)) {
-				continue; // otra transaccion la cancelo (o la movio) mientras esperabamos
+			if (reserva != null && sigueAfectada(reserva, bloqueo, ahora)) { // si no, otra transaccion la cancelo o la movio
+				bloqueadas.add(reserva);
 			}
+		}
+		// Fase 2: ya con todas las filas en la mano, se cancelan (cargos, avisos y, si estaban facturadas, rectificativas)
+		List<Long> canceladas = new ArrayList<>();
+		for (Reserva reserva : bloqueadas) {
 			reservaService.cancelarPorMantenimiento(reserva, administrador);
-			canceladas.add(id);
+			canceladas.add(reserva.getId());
 		}
 		return new CancelacionAfectadasResponse(canceladas.size(), canceladas);
 	}

@@ -45,6 +45,12 @@ public class TextosAviso {
 		};
 	}
 
+	/** "Se ha emitido la factura rectificativa F2030-0002 (-45,00 €) que anula la F2030-0001: Pista 1 de Club A el 07/01/2030 a las 11:00" */
+	public String rectificativa(String numeroRectificativa, String numeroOriginal, BigDecimal total, Reserva reserva) {
+		return "Se ha emitido la factura rectificativa %s (%s) que anula la factura %s: %s".formatted(numeroRectificativa,
+				euros(total), numeroOriginal, describir(reserva));
+	}
+
 	/** "11,25 €" */
 	public static String euros(BigDecimal importe) {
 		return String.format(ES, "%.2f €", importe);
