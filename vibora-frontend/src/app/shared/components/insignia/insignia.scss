@@ -1,0 +1,51 @@
+:host {
+  display: inline-block;
+}
+
+.insignia {
+  display: inline-block;
+  padding: 0.125rem 0.75rem;
+  border-radius: 999px;
+  background: var(--mat-sys-surface-container-highest);
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-large);
+  white-space: nowrap;
+
+  // estados de incidencia
+  &.variante-estado-abierta {
+    background: var(--mat-sys-primary-container);
+    color: var(--mat-sys-on-primary-container);
+  }
+
+  &.variante-estado-asignada {
+    background: var(--mat-sys-secondary-container);
+    color: var(--mat-sys-on-secondary-container);
+  }
+
+  &.variante-estado-en_curso,
+  &.variante-estado-resuelta {
+    background: var(--mat-sys-tertiary-container);
+    color: var(--mat-sys-on-tertiary-container);
+  }
+
+  &.variante-estado-rechazada {
+    background: var(--mat-sys-error-container);
+    color: var(--mat-sys-on-error-container);
+  }
+
+  // prioridades de incidencia
+  &.variante-prioridad-media {
+    background: var(--mat-sys-secondary-container);
+    color: var(--mat-sys-on-secondary-container);
+  }
+
+  &.variante-prioridad-alta {
+    background: var(--mat-sys-tertiary-container);
+    color: var(--mat-sys-on-tertiary-container);
+  }
+
+  &.variante-prioridad-urgente {
+    background: var(--mat-sys-error);
+    color: var(--mat-sys-on-error);
+  }
+}

@@ -43,6 +43,11 @@ export interface CasillaAgenda {
   fin: string;
   disponible: boolean;
   precio: number | null;
+  /**
+   * La casilla solapa un bloqueo de mantenimiento activo (y entonces `disponible` es false). El backend siempre
+   * lo envía; se tolera su ausencia (un backend anterior) como "no bloqueada".
+   */
+  bloqueada?: boolean;
 }
 
 export interface ReservaRequest {
