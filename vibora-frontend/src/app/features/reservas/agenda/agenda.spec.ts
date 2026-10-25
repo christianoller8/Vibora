@@ -58,6 +58,14 @@ const SIN_TARIFA: CasillaAgenda = {
   precio: null,
 };
 
+const BLOQUEADA: CasillaAgenda = {
+  inicio: '2026-07-15T20:30:00Z',
+  fin: '2026-07-15T22:00:00Z',
+  disponible: false,
+  precio: 12,
+  bloqueada: true,
+};
+
 describe('Agenda', () => {
   let fixture: ComponentFixture<Agenda>;
   let componente: Agenda;
@@ -132,6 +140,82 @@ describe('Agenda', () => {
 
     expect(sinTarifa.textContent).toContain('Sin tarifa');
     expect(sinTarifa.disabled).toBe(true);
+  });
+
+  describe('casillas bloqueadas por mantenimiento', () => {
+    beforeEach(() => {
+      reservas.agenda.mockReturnValue(of([LIBRE, OCUPADA, BLOQUEADA]));
+    });
+
+    it('se pintan deshabilitadas con "En mantenimiento", distintas de las ocupadas', async () => {
+      await crear();
+
+      const [, ocupada, bloqueada] = casillas();
+      expect(bloqueada.textContent).toContain('En mantenimiento');
+      expect(bloqueada.textContent).not.toContain('No disponible');
+      expect(bloqueada.textContent).toContain('22:30 – 00:00');
+      expect(bloqueada.disabled).toBe(true);
+      expect(bloqueada.classList.contains('bloqueada')).toBe(true);
+      expect(ocupada.textContent).toContain('No disponible');
+      expect(ocupada.textContent).not.toContain('En mantenimiento');
+      expect(ocupada.classList.contains('bloqueada')).toBe(false);
+    });
+
+    it('llevan un icono decorativo y un tooltip que explica el motivo', async () => {
+      await crear();
+
+      const [libre, , bloqueada] = casillas();
+      expect(bloqueada.querySelector('mat-icon')?.getAttribute('aria-hidden')).toBe('true');
+      expect(bloqueada.getAttribute('title')).toContain('mantenimiento');
+      expect(libre.getAttribute('title')).toBeNull();
+    });
+
+    it('no es pulsable: no abre el diálogo de reserva', async () => {
+      await crear();
+
+      casillas()[2].click();
+
+      expect(dialogo.open).not.toHaveBeenCalled();
+      expect(reservas.crear).not.toHaveBeenCalled();
+    });
+
+    it('aunque llegara marcada como disponible a la vez, bloqueada manda y no se puede reservar', async () => {
+      reservas.agenda.mockReturnValue(of([{ ...BLOQUEADA, disponible: true }]));
+      await crear();
+
+      expect(casillas()[0].disabled).toBe(true);
+      expect(casillas()[0].textContent).toContain('En mantenimiento');
+      casillas()[0].click();
+      expect(dialogo.open).not.toHaveBeenCalled();
+    });
+
+    it('una casilla sin el campo "bloqueada" (backend anterior) se comporta como siempre', async () => {
+      reservas.agenda.mockReturnValue(of([LIBRE, OCUPADA, SIN_TARIFA]));
+      await crear();
+
+      const [libre, ocupada, sinTarifa] = casillas();
+      expect(libre.disabled).toBe(false);
+      expect(libre.classList.contains('bloqueada')).toBe(false);
+      expect(ocupada.textContent).toContain('No disponible');
+      expect(sinTarifa.textContent).toContain('Sin tarifa');
+      expect(el().textContent).not.toContain('En mantenimiento');
+    });
+
+    it('bloqueada=false explícito tampoco cambia nada', async () => {
+      reservas.agenda.mockReturnValue(of([{ ...LIBRE, bloqueada: false }]));
+      await crear();
+
+      expect(casillas()[0].disabled).toBe(false);
+      expect(casillas()[0].textContent).toContain('Disponible');
+    });
+
+    it('las libres siguen reservándose con normalidad en la misma agenda', async () => {
+      await crear();
+
+      casillas()[0].click();
+
+      expect(dialogo.open).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('recarga pistas y agenda al cambiar de club', async () => {

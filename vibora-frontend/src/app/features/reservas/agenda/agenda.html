@@ -50,12 +50,23 @@
           type="button"
           class="casilla"
           [class.disponible]="esReservable(casilla)"
+          [class.bloqueada]="estaBloqueada(casilla)"
+          [attr.title]="
+            estaBloqueada(casilla)
+              ? 'La pista está en mantenimiento en este horario y no se puede reservar'
+              : null
+          "
           [disabled]="!esReservable(casilla) || reservando()"
           (click)="reservar(casilla)"
         >
           <span class="hora">{{ formatearRango(casilla.inicio, casilla.fin) }}</span>
           <span class="precio">{{ formatearPrecio(casilla.precio) }}</span>
-          <span class="estado">{{ estado(casilla) }}</span>
+          <span class="estado">
+            @if (estaBloqueada(casilla)) {
+              <mat-icon aria-hidden="true">construction</mat-icon>
+            }
+            {{ estado(casilla) }}
+          </span>
         </button>
       }
     </div>

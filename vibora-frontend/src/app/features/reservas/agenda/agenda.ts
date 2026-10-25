@@ -4,6 +4,7 @@ import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -31,6 +32,7 @@ import { ReservaService } from '../reserva.service';
     ReactiveFormsModule,
     MatButtonModule,
     MatFormFieldModule,
+    MatIconModule,
     MatInputModule,
     MatProgressSpinnerModule,
   ],
@@ -104,7 +106,15 @@ export class Agenda {
     this.cargarClubes();
   }
 
+  /** Bloqueada por mantenimiento; un backend que no manda el campo equivale a "no bloqueada". */
+  protected estaBloqueada(casilla: CasillaAgenda): boolean {
+    return casilla.bloqueada === true;
+  }
+
   protected estado(casilla: CasillaAgenda): string {
+    if (this.estaBloqueada(casilla)) {
+      return 'En mantenimiento';
+    }
     if (!casilla.disponible) {
       return 'No disponible';
     }
@@ -112,7 +122,7 @@ export class Agenda {
   }
 
   protected esReservable(casilla: CasillaAgenda): boolean {
-    return casilla.disponible && casilla.precio !== null;
+    return casilla.disponible && casilla.precio !== null && !this.estaBloqueada(casilla);
   }
 
   protected reservar(casilla: CasillaAgenda): void {

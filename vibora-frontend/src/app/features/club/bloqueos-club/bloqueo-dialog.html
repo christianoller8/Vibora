@@ -1,0 +1,83 @@
+<h2 mat-dialog-title>Nuevo bloqueo</h2>
+
+<form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+  <mat-dialog-content>
+    <p class="ayuda">
+      Mientras dure el bloqueo la pista no admite reservas nuevas. Las reservas que ya existan no se
+      tocan: después podrás ver cuáles son y decidir si cancelarlas.
+    </p>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Pista</mat-label>
+      <select matNativeControl name="pistaId" formControlName="pistaId">
+        @for (pista of datos.pistas; track pista.id) {
+          <option [value]="pista.id">{{ etiquetaPista(pista) }}</option>
+        }
+      </select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Motivo</mat-label>
+      <input matInput type="text" name="motivo" formControlName="motivo" required />
+      <mat-hint align="end">{{ form.controls.motivo.value.length }}/{{ maxMotivo }}</mat-hint>
+      @if (form.controls.motivo.hasError('maxlength')) {
+        <mat-error>El motivo admite como máximo {{ maxMotivo }} caracteres</mat-error>
+      } @else {
+        <mat-error>El motivo es obligatorio</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="fechas">
+      <mat-form-field appearance="outline">
+        <mat-label>Desde (opcional)</mat-label>
+        <input matInput type="datetime-local" name="desde" formControlName="desde" />
+        <mat-hint>Hora de Madrid. Vacío = ahora</mat-hint>
+        <mat-error>Esa hora no existe en Madrid (cambio de hora). Elige otra.</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Hasta (opcional)</mat-label>
+        <input
+          matInput
+          type="datetime-local"
+          name="hasta"
+          formControlName="hasta"
+          [errorStateMatcher]="matcherFin"
+        />
+        <mat-hint>Hora de Madrid. Vacío = sin fin</mat-hint>
+        @if (form.hasError('rangoFechas')) {
+          <mat-error>El fin debe ser posterior al inicio</mat-error>
+        } @else {
+          <mat-error>Esa hora no existe en Madrid (cambio de hora). Elige otra.</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Incidencia asociada (opcional)</mat-label>
+      <select matNativeControl name="incidenciaId" formControlName="incidenciaId">
+        <option value="">Sin incidencia</option>
+        @for (incidencia of elegibles(); track incidencia.id) {
+          <option [value]="incidencia.id">{{ etiquetaIncidencia(incidencia) }}</option>
+        }
+      </select>
+      <mat-hint
+        >Si la incidencia pasa a resuelta, cerrada o rechazada, el bloqueo se levanta solo</mat-hint
+      >
+    </mat-form-field>
+
+    @if (errorIncidencias(); as mensaje) {
+      <p class="aviso">{{ mensaje }}</p>
+    }
+    @if (error(); as mensaje) {
+      <p class="error" role="alert">{{ mensaje }}</p>
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" data-accion="cancelar" (click)="cancelar()">Cancelar</button>
+    <button mat-flat-button type="submit" [disabled]="form.invalid || guardando()">
+      {{ guardando() ? 'Bloqueando…' : 'Bloquear pista' }}
+    </button>
+  </mat-dialog-actions>
+</form>

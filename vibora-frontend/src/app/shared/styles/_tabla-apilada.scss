@@ -1,0 +1,48 @@
+// En pantallas estrechas una tabla de varias columnas obliga a hacer scroll lateral y deja las acciones fuera de
+// vista. Este mixin la convierte en una lista de tarjetas: cada fila es una tarjeta y cada celda con `data-label`
+// muestra su cabecera encima del valor. La fila de cabeceras sigue en el DOM (oculta solo a la vista) para los
+// lectores de pantalla.
+@mixin tabla-apilada($fila, $ancho: 40rem) {
+  @media (max-width: $ancho) {
+    table {
+      display: block;
+    }
+
+    // mat-table crea <tbody> por su cuenta (no lleva el atributo de encapsulación del componente): única razón del ng-deep
+    :host ::ng-deep tbody {
+      display: block;
+    }
+
+    tr[mat-header-row] {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+    }
+
+    #{$fila} {
+      display: block;
+      height: auto;
+      margin-bottom: 0.75rem;
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--mat-sys-outline-variant);
+      border-radius: var(--mat-sys-corner-medium);
+
+      td {
+        display: block;
+        height: auto;
+        min-height: 0;
+        padding: 0.375rem 0;
+        border: 0;
+
+        &[data-label]::before {
+          content: attr(data-label);
+          display: block;
+          color: var(--mat-sys-on-surface-variant);
+          font: var(--mat-sys-label-medium);
+        }
+      }
+    }
+  }
+}

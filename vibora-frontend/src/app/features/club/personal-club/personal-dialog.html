@@ -1,0 +1,49 @@
+<h2 mat-dialog-title>Añadir personal</h2>
+
+<form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+  <mat-dialog-content>
+    <p class="ayuda">
+      La persona tiene que estar ya registrada en Víbora y no pertenecer a ningún club.
+    </p>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Email</mat-label>
+      <input
+        matInput
+        type="email"
+        name="email"
+        formControlName="email"
+        autocomplete="off"
+        inputmode="email"
+        required
+      />
+      @if (form.controls.email.hasError('required')) {
+        <mat-error>El email es obligatorio</mat-error>
+      } @else if (form.controls.email.hasError('maxlength')) {
+        <mat-error>El email es demasiado largo</mat-error>
+      } @else {
+        <mat-error>Introduce un email válido</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Rol</mat-label>
+      <select matNativeControl name="rol" formControlName="rol">
+        @for (rol of roles; track rol) {
+          <option [value]="rol">{{ etiquetaRol[rol] }}</option>
+        }
+      </select>
+    </mat-form-field>
+
+    @if (error(); as mensaje) {
+      <p class="error" role="alert">{{ mensaje }}</p>
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" data-accion="cancelar" (click)="cancelar()">Cancelar</button>
+    <button mat-flat-button type="submit" [disabled]="form.invalid || guardando()">
+      {{ guardando() ? 'Añadiendo…' : 'Añadir' }}
+    </button>
+  </mat-dialog-actions>
+</form>

@@ -8,6 +8,8 @@ import { NotificacionesStore } from '../../../core/notificaciones/notificaciones
 import { Notificacion } from '../../../shared/models/notificacion.model';
 import { USUARIO_ADMIN, crearAuthFalso } from '../../../testing/test-utils';
 import { ReservaService } from '../../reservas/reserva.service';
+import { BloqueoService } from '../bloqueo.service';
+import { PersonalService } from '../personal.service';
 import { PistaService } from '../pista.service';
 import { TarifaService } from '../tarifa.service';
 import { ClubAdmin } from './club-admin';
@@ -17,6 +19,8 @@ describe('ClubAdmin', () => {
   const clubes = { obtener: vi.fn(), actualizar: vi.fn(), pistas: vi.fn() };
   const tarifas = { listar: vi.fn() };
   const reservas = { delClub: vi.fn(), cancelar: vi.fn() };
+  const personal = { listar: vi.fn(), agregar: vi.fn(), quitar: vi.fn() };
+  const bloqueos = { listar: vi.fn() };
 
   async function crear(auth = crearAuthFalso(USUARIO_ADMIN)): Promise<void> {
     await TestBed.configureTestingModule({
@@ -27,6 +31,8 @@ describe('ClubAdmin', () => {
         { provide: PistaService, useValue: {} },
         { provide: TarifaService, useValue: tarifas },
         { provide: ReservaService, useValue: reservas },
+        { provide: PersonalService, useValue: personal },
+        { provide: BloqueoService, useValue: bloqueos },
         { provide: NotificacionesStore, useValue: { recibidas$: new Subject<Notificacion>() } },
         { provide: MatDialog, useValue: { open: vi.fn() } },
         { provide: MatSnackBar, useValue: { open: vi.fn() } },
@@ -55,9 +61,11 @@ describe('ClubAdmin', () => {
     clubes.pistas.mockReturnValue(NEVER);
     tarifas.listar.mockReturnValue(NEVER);
     reservas.delClub.mockReturnValue(NEVER);
+    personal.listar.mockReturnValue(NEVER);
+    bloqueos.listar.mockReturnValue(NEVER);
   });
 
-  it('muestra el nombre del club y las cuatro pestañas en orden', async () => {
+  it('muestra el nombre del club y las seis pestañas en orden', async () => {
     await crear();
 
     expect(el().querySelector('h1')?.textContent).toContain('Mi club');
@@ -67,7 +75,42 @@ describe('ClubAdmin', () => {
       'Pistas',
       'Tarifas',
       'Reservas',
+      'Personal',
+      'Bloqueos',
     ]);
+  });
+
+  it('"Personal" carga el personal del club al abrirla y no antes', async () => {
+    await crear();
+    expect(personal.listar).not.toHaveBeenCalled();
+
+    pestanas()[4].click();
+    await fixture.whenStable();
+
+    expect(personal.listar).toHaveBeenCalledWith(5);
+    expect(el().querySelector('app-personal-club')).not.toBeNull();
+  });
+
+  it('"Bloqueos" carga las pistas del club al abrirla y no antes', async () => {
+    await crear();
+    expect(clubes.pistas).not.toHaveBeenCalled();
+
+    pestanas()[5].click();
+    await fixture.whenStable();
+
+    expect(clubes.pistas).toHaveBeenCalledWith(5);
+    expect(el().querySelector('app-bloqueos-club')).not.toBeNull();
+  });
+
+  it('al salir de una pestaña nueva se destruye (no queda cargando en segundo plano)', async () => {
+    await crear();
+    pestanas()[4].click();
+    await fixture.whenStable();
+
+    pestanas()[0].click();
+    await fixture.whenStable();
+
+    expect(el().querySelector('app-personal-club')).toBeNull();
   });
 
   it('arranca en "Datos" y solo carga lo de la pestaña activa', async () => {

@@ -1,0 +1,15 @@
+mat-dialog-content {
+  display: flex;
+  flex-direction: column;
+  min-width: min(24rem, 80vw);
+}
+
+.ayuda {
+  margin: 0 0 1rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.error {
+  margin: 0;
+  color: var(--mat-sys-error);
+}

@@ -1,0 +1,161 @@
+<div class="cabecera">
+  <h2>Bloqueos de pista</h2>
+  <button
+    mat-flat-button
+    type="button"
+    data-accion="nuevo"
+    [disabled]="pistas().length === 0"
+    (click)="nuevo()"
+  >
+    <mat-icon aria-hidden="true">add</mat-icon>
+    Nuevo bloqueo
+  </button>
+</div>
+
+@if (cargandoPistas()) {
+  <mat-spinner diameter="40" aria-label="Cargando pistas" />
+} @else if (errorPistas(); as mensaje) {
+  <p class="error" role="alert">{{ mensaje }}</p>
+  <button mat-stroked-button type="button" data-accion="reintentar" (click)="cargarPistas()">
+    Reintentar
+  </button>
+} @else if (pistas().length === 0) {
+  <p class="vacio">
+    Este club todavía no tiene pistas. Crea una en la pestaña «Pistas» para poder bloquearla.
+  </p>
+} @else {
+  <div class="filtros">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Pista</mat-label>
+      <select matNativeControl name="pista" [formControl]="pistaCtrl">
+        @for (pista of pistas(); track pista.id) {
+          <option [ngValue]="pista.id">{{ etiquetaPista(pista) }}</option>
+        }
+      </select>
+    </mat-form-field>
+
+    <mat-button-toggle-group
+      class="filtro"
+      name="filtro"
+      aria-label="Filtrar bloqueos por estado"
+      [formControl]="filtroCtrl"
+    >
+      @for (filtro of filtros; track filtro) {
+        <mat-button-toggle [value]="filtro" [attr.data-filtro]="filtro.toLowerCase()">{{
+          etiquetaFiltro[filtro]
+        }}</mat-button-toggle>
+      }
+    </mat-button-toggle-group>
+  </div>
+
+  @if (cargando()) {
+    <mat-spinner diameter="40" aria-label="Cargando bloqueos" />
+  } @else if (error(); as mensaje) {
+    <p class="error" role="alert">{{ mensaje }}</p>
+    <button mat-stroked-button type="button" data-accion="reintentar" (click)="recargar()">
+      Reintentar
+    </button>
+  } @else if (bloqueos().length === 0) {
+    <p class="vacio">{{ mensajeVacio[filtroCtrl.value] }}</p>
+  } @else {
+    <div class="tabla">
+      <table mat-table [dataSource]="bloqueos()" aria-label="Bloqueos de la pista">
+        <ng-container matColumnDef="pista">
+          <th mat-header-cell *matHeaderCellDef>Pista</th>
+          <td mat-cell *matCellDef="let bloqueo" class="pista" data-label="Pista">
+            {{ bloqueo.pistaNombre }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="motivo">
+          <th mat-header-cell *matHeaderCellDef>Motivo</th>
+          <td mat-cell *matCellDef="let bloqueo" data-label="Motivo">
+            <span class="motivo">{{ bloqueo.motivo }}</span>
+            @if (bloqueo.incidenciaId !== null) {
+              <a
+                class="incidencia"
+                [routerLink]="['/incidencias', bloqueo.incidenciaId]"
+                [attr.aria-label]="'Ver la incidencia ' + bloqueo.incidenciaId"
+                >Incidencia #{{ bloqueo.incidenciaId }}</a
+              >
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="vigencia">
+          <th mat-header-cell *matHeaderCellDef>Vigencia</th>
+          <td mat-cell *matCellDef="let bloqueo" class="vigencia" data-label="Vigencia">
+            {{ vigencia(bloqueo) }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let bloqueo" data-label="Estado">
+            <mat-chip-set aria-label="Estado del bloqueo">
+              <mat-chip class="estado" [attr.data-estado]="estado(bloqueo).toLowerCase()">{{
+                etiquetaEstado[estado(bloqueo)]
+              }}</mat-chip>
+            </mat-chip-set>
+            @if (bloqueo.levantadoPor; as quien) {
+              <span class="levantado"
+                >Por {{ quien.nombre }} el {{ formatearFechaHora(bloqueo.levantadoEn) }}</span
+              >
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="creador">
+          <th mat-header-cell *matHeaderCellDef>Creado por</th>
+          <td mat-cell *matCellDef="let bloqueo" class="creador" data-label="Creado por">
+            <span>{{ bloqueo.creadoPor.nombre }}</span>
+            <span class="cuando">{{ formatearFechaHora(bloqueo.creadoEn) }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef><span class="oculto">Acciones</span></th>
+          <td mat-cell *matCellDef="let bloqueo" class="acciones">
+            @if (estado(bloqueo) === 'ACTIVO') {
+              <div class="botones">
+                <button
+                  mat-stroked-button
+                  type="button"
+                  data-accion="ver-afectadas"
+                  [attr.aria-label]="etiquetaAccion('Ver afectadas', bloqueo)"
+                  [disabled]="acciones.ocupado()"
+                  (click)="verAfectadas(bloqueo)"
+                >
+                  Ver afectadas
+                </button>
+                <button
+                  mat-stroked-button
+                  type="button"
+                  data-accion="cancelar-afectadas"
+                  [attr.aria-label]="etiquetaAccion('Cancelar afectadas', bloqueo)"
+                  [disabled]="acciones.ocupado()"
+                  (click)="cancelarAfectadas(bloqueo)"
+                >
+                  Cancelar afectadas
+                </button>
+                <button
+                  mat-stroked-button
+                  type="button"
+                  data-accion="levantar"
+                  [attr.aria-label]="etiquetaAccionLevantar(bloqueo)"
+                  [disabled]="acciones.ocupado()"
+                  (click)="levantar(bloqueo)"
+                >
+                  Levantar
+                </button>
+              </div>
+            }
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr mat-row *matRowDef="let bloqueo; columns: columnas" class="bloqueo"></tr>
+      </table>
+    </div>
+  }
+}

@@ -37,7 +37,10 @@ export const USUARIO_ADMIN: Usuario = {
 };
 
 /** Simula que el usuario escribe (o elige) un valor en un campo nativo y sale de él. */
-export function escribir(campo: HTMLInputElement | HTMLSelectElement, valor: string): void {
+export function escribir(
+  campo: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+  valor: string,
+): void {
   campo.value = valor;
   campo.dispatchEvent(new Event('input', { bubbles: true }));
   campo.dispatchEvent(new Event('change', { bubbles: true }));
@@ -53,6 +56,39 @@ export function crearNotificacion(id: number, cambios: Partial<Notificacion> = {
     leida: false,
     creadaEn: new Date(Date.now() - id * 60_000).toISOString(),
     ...cambios,
+  };
+}
+
+/** Simula que el usuario elige archivos en un `<input type="file">` (jsdom no permite asignar `files`). */
+export function elegirArchivos(campo: HTMLInputElement, archivos: File[]): void {
+  Object.defineProperty(campo, 'files', { value: archivos, configurable: true });
+  campo.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+/** Archivo de imagen de prueba (el contenido no importa: el navegador solo mira tipo y tamaño). */
+export function crearImagen(nombre: string, tipo = 'image/png', bytes = 100): File {
+  return new File([new Uint8Array(bytes)], nombre, { type: tipo });
+}
+
+/**
+ * jsdom no implementa `URL.createObjectURL` / `revokeObjectURL`: los sustituye por dobles que numeran las URLs
+ * ("blob:prueba/1", "blob:prueba/2"...). Hay que llamar a `restaurar()` al terminar cada test.
+ */
+export function simularObjectUrls() {
+  let contador = 0;
+  const crear = vi.fn((_objeto: Blob | MediaSource) => `blob:prueba/${++contador}`);
+  const revocar = vi.fn((_url: string) => undefined);
+  const crearOriginal = URL.createObjectURL;
+  const revocarOriginal = URL.revokeObjectURL;
+  URL.createObjectURL = crear;
+  URL.revokeObjectURL = revocar;
+  return {
+    crear,
+    revocar,
+    restaurar: (): void => {
+      URL.createObjectURL = crearOriginal;
+      URL.revokeObjectURL = revocarOriginal;
+    },
   };
 }
 

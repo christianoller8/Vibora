@@ -34,6 +34,16 @@
         <app-reservas-club [clubId]="clubId" />
       </ng-template>
     </mat-tab>
+    <mat-tab label="Personal">
+      <ng-template matTabContent>
+        <app-personal-club [clubId]="clubId" />
+      </ng-template>
+    </mat-tab>
+    <mat-tab label="Bloqueos">
+      <ng-template matTabContent>
+        <app-bloqueos-club [clubId]="clubId" />
+      </ng-template>
+    </mat-tab>
   </mat-tab-group>
 } @else {
   <p class="error" role="alert">

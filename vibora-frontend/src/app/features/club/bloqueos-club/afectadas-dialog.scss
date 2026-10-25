@@ -1,0 +1,57 @@
+@use '../../../shared/styles/tabla-apilada' as apilada;
+
+@include apilada.tabla-apilada('tr.afectada');
+
+mat-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: min(40rem, 80vw);
+}
+
+.intro {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.tabla {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+}
+
+.fecha,
+.hora,
+.nombre,
+.email {
+  display: block;
+}
+
+.hora {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.email {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.jugadores {
+  white-space: nowrap;
+}
+
+.vacio,
+.resultado {
+  margin: 0;
+}
+
+.vacio {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.error {
+  margin: 0;
+  color: var(--mat-sys-error);
+}

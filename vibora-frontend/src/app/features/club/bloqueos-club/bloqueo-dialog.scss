@@ -1,0 +1,37 @@
+mat-dialog-content {
+  display: flex;
+  flex-direction: column;
+  min-width: min(28rem, 80vw);
+
+  // Sin esto, con muchos campos el contenido (limitado en alto) los encoge y los avisos de un campo
+  // se montan sobre el siguiente: mejor que haga scroll
+  > * {
+    flex-shrink: 0;
+  }
+}
+
+// Los avisos (hint) de un campo no deben tocar la etiqueta flotante del siguiente
+mat-form-field {
+  margin-bottom: 1rem;
+}
+
+.ayuda,
+.aviso {
+  margin: 0 0 1rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.fechas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1rem;
+
+  mat-form-field {
+    flex: 1 1 12rem;
+  }
+}
+
+.error {
+  margin: 0;
+  color: var(--mat-sys-error);
+}

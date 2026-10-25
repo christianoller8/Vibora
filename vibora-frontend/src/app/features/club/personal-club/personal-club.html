@@ -1,0 +1,66 @@
+<div class="cabecera">
+  <h2>Personal</h2>
+  <button mat-flat-button type="button" data-accion="anadir" (click)="anadir()">
+    <mat-icon aria-hidden="true">person_add</mat-icon>
+    Añadir personal
+  </button>
+</div>
+
+@if (cargando()) {
+  <mat-spinner diameter="40" aria-label="Cargando el personal" />
+} @else if (error(); as mensaje) {
+  <p class="error" role="alert">{{ mensaje }}</p>
+  <button mat-stroked-button type="button" data-accion="reintentar" (click)="cargar()">
+    Reintentar
+  </button>
+} @else if (personal().length === 0) {
+  <p class="vacio">No hay personal en el club.</p>
+} @else {
+  <div class="tabla">
+    <table mat-table [dataSource]="personal()" aria-label="Personal del club">
+      <ng-container matColumnDef="nombre">
+        <th mat-header-cell *matHeaderCellDef>Nombre</th>
+        <td mat-cell *matCellDef="let persona" data-label="Nombre">
+          <span class="nombre">{{ nombreCompleto(persona) }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="email">
+        <th mat-header-cell *matHeaderCellDef>Email</th>
+        <td mat-cell *matCellDef="let persona" data-label="Email">{{ persona.email }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="rol">
+        <th mat-header-cell *matHeaderCellDef>Rol</th>
+        <td mat-cell *matCellDef="let persona" data-label="Rol">
+          <mat-chip-set aria-label="Rol en el club">
+            <mat-chip class="rol" [class.admin]="persona.rol === 'ADMIN_CLUB'">{{
+              etiquetaDeRol(persona)
+            }}</mat-chip>
+          </mat-chip-set>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef><span class="oculto">Acciones</span></th>
+        <td mat-cell *matCellDef="let persona" class="acciones">
+          @if (puedeQuitar(persona)) {
+            <button
+              mat-icon-button
+              type="button"
+              data-accion="quitar"
+              [attr.aria-label]="'Quitar a ' + nombreCompleto(persona) + ' del personal'"
+              [disabled]="quitando() !== null"
+              (click)="quitar(persona)"
+            >
+              <mat-icon aria-hidden="true">person_remove</mat-icon>
+            </button>
+          }
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+      <tr mat-row *matRowDef="let persona; columns: columnas" class="miembro"></tr>
+    </table>
+  </div>
+}
