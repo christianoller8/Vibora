@@ -126,28 +126,29 @@ describe('Campana', () => {
     expect(navegar).toHaveBeenCalledWith('/mis-reservas');
   });
 
-  it.each(['PERSONAL_ANADIDO', 'INCIDENCIA_NUEVA', 'INCIDENCIA_COMENTARIO'] as TipoNotificacion[])(
-    'una notificación %s se marca leída y navega sin lanzar',
-    async (tipo) => {
-      await crear([crearNotificacion(9, { tipo })], 1);
-      // como el Router real: una URL que no es string revienta
-      const navegar = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockImplementation(((
-        url: unknown,
-      ) => {
-        if (typeof url !== 'string') {
-          throw new TypeError('destino inválido');
-        }
-        return Promise.resolve(true);
-      }) as Router['navigateByUrl']);
-      await abrir();
+  it.each<[TipoNotificacion, string]>([
+    ['PERSONAL_ANADIDO', '/agenda'],
+    ['INCIDENCIA_NUEVA', '/incidencias'],
+    ['INCIDENCIA_COMENTARIO', '/incidencias'],
+  ])('una notificación %s se marca leída y navega a %s sin lanzar', async (tipo, destino) => {
+    await crear([crearNotificacion(9, { tipo })], 1);
+    // como el Router real: una URL que no es string revienta
+    const navegar = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockImplementation(((
+      url: unknown,
+    ) => {
+      if (typeof url !== 'string') {
+        throw new TypeError('destino inválido');
+      }
+      return Promise.resolve(true);
+    }) as Router['navigateByUrl']);
+    await abrir();
 
-      filas()[0].click();
-      await fixture.whenStable();
+    filas()[0].click();
+    await fixture.whenStable();
 
-      expect(store.marcarLeida).toHaveBeenCalledWith(9);
-      expect(navegar).toHaveBeenCalledWith('/agenda');
-    },
-  );
+    expect(store.marcarLeida).toHaveBeenCalledWith(9);
+    expect(navegar).toHaveBeenCalledWith(destino);
+  });
 
   it('"Marcar todas como leídas" llama al store y está deshabilitado sin no leídas', async () => {
     await crear([crearNotificacion(1)], 1);

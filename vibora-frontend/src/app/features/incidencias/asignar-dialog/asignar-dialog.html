@@ -1,0 +1,43 @@
+<h2 mat-dialog-title>{{ datos.asignadaA ? 'Reasignar incidencia' : 'Asignar incidencia' }}</h2>
+
+<form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+  <mat-dialog-content>
+    @if (cargando()) {
+      <mat-spinner diameter="32" aria-label="Cargando el personal" />
+    } @else if (errorCarga(); as mensaje) {
+      <p class="error" role="alert">{{ mensaje }}</p>
+    } @else if (mantenimiento().length === 0) {
+      <p class="vacio">No hay personal de mantenimiento en este club.</p>
+    } @else {
+      <mat-form-field appearance="outline">
+        <mat-label>Responsable</mat-label>
+        <select matNativeControl name="usuarioId" formControlName="usuarioId" required>
+          <option value="" disabled>Elige a una persona</option>
+          @for (persona of mantenimiento(); track persona.usuarioId) {
+            <option [value]="persona.usuarioId">{{ nombreCompleto(persona) }}</option>
+          }
+        </select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Prioridad</mat-label>
+        <select matNativeControl name="prioridad" formControlName="prioridad">
+          @for (prioridad of prioridades; track prioridad) {
+            <option [value]="prioridad">{{ etiquetaPrioridad[prioridad] }}</option>
+          }
+        </select>
+      </mat-form-field>
+    }
+
+    @if (error(); as mensaje) {
+      <p class="error" role="alert">{{ mensaje }}</p>
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" data-accion="cancelar" (click)="cancelar()">Cancelar</button>
+    <button mat-flat-button type="submit" [disabled]="form.invalid || enviando()">
+      {{ enviando() ? 'Guardando…' : 'Asignar' }}
+    </button>
+  </mat-dialog-actions>
+</form>

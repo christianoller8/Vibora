@@ -76,6 +76,25 @@ describe('rutas de la aplicación', () => {
     expect(await navegar('/deudas', true)).toBe('/deudas');
   });
 
+  it('/incidencias sin sesión va a /login conservando redirectTo', async () => {
+    expect(await navegar('/incidencias', false)).toBe('/login?redirectTo=%2Fincidencias');
+  });
+
+  it('/incidencias/nueva y /incidencias/7 sin sesión también exigen login', async () => {
+    expect(await navegar('/incidencias/nueva', false)).toBe(
+      '/login?redirectTo=%2Fincidencias%2Fnueva',
+    );
+    TestBed.resetTestingModule();
+    expect(await navegar('/incidencias/7', false)).toBe('/login?redirectTo=%2Fincidencias%2F7');
+  });
+
+  it.each(['/incidencias', '/incidencias/nueva', '/incidencias/7'])(
+    '%s con sesión se queda donde está (cualquier rol)',
+    async (url) => {
+      expect(await navegar(url, true, USUARIO_JUGADOR)).toBe(url);
+    },
+  );
+
   it('/club sin sesión va a /login conservando redirectTo', async () => {
     expect(await navegar('/club', false)).toBe('/login?redirectTo=%2Fclub');
   });

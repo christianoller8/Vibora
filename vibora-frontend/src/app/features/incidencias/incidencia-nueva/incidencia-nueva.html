@@ -1,0 +1,123 @@
+<h1>Reportar incidencia</h1>
+
+@if (cargandoClubes()) {
+  <mat-spinner diameter="40" aria-label="Cargando clubes" />
+} @else if (errorClubes(); as mensaje) {
+  <p class="error" role="alert">{{ mensaje }}</p>
+} @else if (clubes().length === 0) {
+  <p class="vacio">Todavía no hay clubes donde reportar incidencias.</p>
+} @else if (creadaId() === null) {
+  <form [formGroup]="form" (ngSubmit)="enviar()" novalidate>
+    <div class="fila">
+      <mat-form-field appearance="outline">
+        <mat-label>Club</mat-label>
+        <select matNativeControl data-campo="club" formControlName="club">
+          @for (club of clubes(); track club.id) {
+            <option [value]="club.id">{{ club.nombre }}</option>
+          }
+        </select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Pista</mat-label>
+        <select matNativeControl data-campo="pista" formControlName="pistaId">
+          <option value="">Sin pista concreta</option>
+          @for (pista of pistas(); track pista.id) {
+            <option [value]="pista.id">{{ pista.nombre }}</option>
+          }
+        </select>
+      </mat-form-field>
+    </div>
+    @if (errorPistas(); as mensaje) {
+      <p class="error" role="alert">{{ mensaje }}</p>
+    }
+
+    <mat-form-field appearance="outline">
+      <mat-label>Categoría</mat-label>
+      <select matNativeControl data-campo="categoria" formControlName="categoria" required>
+        <option value="" disabled>Elige una categoría</option>
+        @for (categoria of categorias; track categoria) {
+          <option [value]="categoria">{{ etiquetaCategoria[categoria] }}</option>
+        }
+      </select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Título</mat-label>
+      <input matInput type="text" name="titulo" formControlName="titulo" autocomplete="off" />
+      <mat-hint align="end">{{ form.controls.titulo.value.length }}/{{ maxTitulo }}</mat-hint>
+      @if (form.controls.titulo.hasError('maxlength')) {
+        <mat-error>El título no puede superar los {{ maxTitulo }} caracteres</mat-error>
+      } @else {
+        <mat-error>El título es obligatorio</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Descripción</mat-label>
+      <textarea matInput name="descripcion" formControlName="descripcion" rows="5"></textarea>
+      <mat-hint align="end"
+        >{{ form.controls.descripcion.value.length }}/{{ maxDescripcion }}</mat-hint
+      >
+      @if (form.controls.descripcion.hasError('maxlength')) {
+        <mat-error>La descripción no puede superar los {{ maxDescripcion }} caracteres</mat-error>
+      } @else {
+        <mat-error>La descripción es obligatoria</mat-error>
+      }
+    </mat-form-field>
+
+    <app-selector-fotos [(archivos)]="fotos" [deshabilitado]="enviando()" />
+
+    @if (error(); as mensaje) {
+      <p class="error" role="alert">{{ mensaje }}</p>
+    }
+
+    <div class="acciones">
+      <a mat-button routerLink="/incidencias">Cancelar</a>
+      <button mat-flat-button type="submit" [disabled]="form.invalid || enviando()">
+        {{ enviando() ? 'Enviando…' : 'Reportar incidencia' }}
+      </button>
+    </div>
+  </form>
+} @else {
+  <p class="resumen">
+    @if (hayFallos()) {
+      La incidencia se ha creado, pero no se han podido subir todas las fotos. Puedes reintentarlo
+      desde la incidencia.
+    } @else if (subidas().length > 0) {
+      La incidencia se ha creado. Subiendo las fotos…
+    }
+  </p>
+
+  @if (subidas().length > 0) {
+    <ul class="subidas" aria-label="Subida de fotos">
+      @for (subida of subidas(); track $index) {
+        <li [attr.data-estado]="subida.estado">
+          <span class="nombre">{{ subida.nombre }}</span>
+          <span class="estado">
+            @switch (subida.estado) {
+              @case ('pendiente') {
+                En espera
+              }
+              @case ('subiendo') {
+                Subiendo…
+              }
+              @case ('subida') {
+                Subida
+              }
+              @case ('error') {
+                {{ subida.error }}
+              }
+            }
+          </span>
+        </li>
+      }
+    </ul>
+  }
+
+  @if (hayFallos()) {
+    <a mat-flat-button data-accion="ver-incidencia" [routerLink]="['/incidencias', creadaId()]">
+      Ver la incidencia
+    </a>
+  }
+}

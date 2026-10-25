@@ -17,13 +17,16 @@ export function destinoNotificacion(tipo: TipoNotificacion): string {
     case 'PARTIDO_COMPLETO':
     case 'RESERVA_CANCELADA':
       return '/mis-reservas';
-    // Por ahora no hay pantallas de incidencias: las de incidencias tomarán el relevo de estos destinos.
-    case 'PERSONAL_ANADIDO':
-    case 'PERSONAL_QUITADO':
+    // LIMITACIÓN: la notificación no trae el id de la incidencia (solo `reservaId`), así que se lleva al listado.
+    // Si el backend añadiera un `incidenciaId` a la notificación, estos cuatro tipos podrían ir a `/incidencias/:id`.
     case 'INCIDENCIA_NUEVA':
     case 'INCIDENCIA_ASIGNADA':
     case 'INCIDENCIA_ESTADO':
     case 'INCIDENCIA_COMENTARIO':
+      return '/incidencias';
+    // Por ahora no hay pantalla de gestión de personal: la de personal tomará el relevo de este destino.
+    case 'PERSONAL_ANADIDO':
+    case 'PERSONAL_QUITADO':
       return '/agenda';
     // Por ahora no hay pantalla de facturas: la de facturas tomará el relevo de este destino.
     case 'FACTURA_RECTIFICATIVA':

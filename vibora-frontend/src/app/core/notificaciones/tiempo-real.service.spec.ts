@@ -123,15 +123,15 @@ describe('TiempoRealService', () => {
       expect(store.marcarLeida).toHaveBeenCalledWith(42);
     });
 
-    it.each([
-      'PERSONAL_ANADIDO',
-      'PERSONAL_QUITADO',
-      'INCIDENCIA_NUEVA',
-      'INCIDENCIA_ASIGNADA',
-      'INCIDENCIA_ESTADO',
-      'INCIDENCIA_COMENTARIO',
-      'FACTURA_RECTIFICATIVA',
-    ] as TipoNotificacion[])('un push %s se entrega y "Ver" navega y marca leída', async (tipo) => {
+    it.each<[TipoNotificacion, string]>([
+      ['PERSONAL_ANADIDO', '/agenda'],
+      ['PERSONAL_QUITADO', '/agenda'],
+      ['INCIDENCIA_NUEVA', '/incidencias'],
+      ['INCIDENCIA_ASIGNADA', '/incidencias'],
+      ['INCIDENCIA_ESTADO', '/incidencias'],
+      ['INCIDENCIA_COMENTARIO', '/incidencias'],
+      ['FACTURA_RECTIFICATIVA', '/agenda'],
+    ])('un push %s se entrega y "Ver" navega a %s y marca leída', async (tipo, destino) => {
       // como el Router real: una URL que no es string revienta
       router.navigateByUrl.mockImplementation((url: unknown) => {
         if (typeof url !== 'string') {
@@ -146,7 +146,7 @@ describe('TiempoRealService', () => {
       opciones[0].alMensaje(JSON.stringify(nueva));
 
       expect(store.recibir).toHaveBeenCalledWith(nueva);
-      expect(router.navigateByUrl).toHaveBeenCalledWith('/agenda');
+      expect(router.navigateByUrl).toHaveBeenCalledWith(destino);
       expect(store.marcarLeida).toHaveBeenCalledWith(77);
     });
 

@@ -24,6 +24,10 @@
           <mat-icon matListItemIcon>payments</mat-icon>
           <span matListItemTitle>Deudas</span>
         </a>
+        <a mat-list-item routerLink="/incidencias" routerLinkActive="activo" (click)="alNavegar()">
+          <mat-icon matListItemIcon>report_problem</mat-icon>
+          <span matListItemTitle>Incidencias</span>
+        </a>
         @if (auth.esAdminClub()) {
           <a mat-list-item routerLink="/club" routerLinkActive="activo" (click)="alNavegar()">
             <mat-icon matListItemIcon>storefront</mat-icon>

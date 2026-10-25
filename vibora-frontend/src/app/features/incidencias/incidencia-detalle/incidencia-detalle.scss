@@ -1,0 +1,214 @@
+.volver {
+  margin-bottom: 0.5rem;
+}
+
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1rem;
+
+  h1 {
+    margin: 0;
+    font: var(--mat-sys-headline-medium);
+    overflow-wrap: anywhere;
+  }
+}
+
+.insignias {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.bloqueo {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+
+  // el icono no se encoge cuando el texto ocupa varias líneas (en móvil se aplastaba)
+  mat-icon {
+    flex: none;
+  }
+}
+
+// Aviso del bloqueo y, para el administrador, sus acciones justo debajo
+.bloqueo-caja {
+  margin: 0 0 1rem;
+
+  .bloqueo {
+    margin-bottom: 0.5rem;
+  }
+}
+
+.acciones-bloqueo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+
+  .bloqueo-caja & {
+    margin-bottom: 0;
+  }
+}
+
+.meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: 0.75rem 1.5rem;
+  margin: 0 0 1.5rem;
+
+  dt {
+    color: var(--mat-sys-on-surface-variant);
+    font: var(--mat-sys-label-large);
+  }
+
+  dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+.bloque {
+  margin-bottom: 1.5rem;
+
+  h2 {
+    margin: 0 0 0.75rem;
+    font: var(--mat-sys-title-large);
+  }
+}
+
+.descripcion {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.fotos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 0.75rem;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.foto {
+  position: relative;
+
+  // el botón que abre la foto cubre la miniatura (el "Reintentar" de la miniatura queda por encima)
+  .abrir {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border: 0;
+    border-radius: var(--mat-sys-corner-medium);
+    background: transparent;
+    cursor: zoom-in;
+
+    &:focus-visible {
+      outline: 3px solid var(--mat-sys-primary);
+      outline-offset: 2px;
+    }
+  }
+
+  .eliminar {
+    position: absolute;
+    top: 0.125rem;
+    right: 0.125rem;
+    z-index: 3;
+    background: var(--mat-sys-surface-container-highest);
+  }
+}
+
+.anadir {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+}
+
+.cupo {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.errores-fotos {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+  color: var(--mat-sys-error);
+}
+
+.comentar form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 40rem;
+
+  mat-form-field {
+    width: 100%;
+  }
+}
+
+.eventos {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.evento {
+  display: flex;
+  gap: 0.75rem;
+
+  mat-icon {
+    flex: none;
+    color: var(--mat-sys-primary);
+  }
+
+  .cuerpo p {
+    margin: 0;
+  }
+
+  .actor {
+    font-weight: 500;
+  }
+
+  .cambio {
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .texto {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .cuando {
+    color: var(--mat-sys-on-surface-variant);
+    font: var(--mat-sys-body-small);
+  }
+}
+
+.vacio {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.error {
+  color: var(--mat-sys-error);
+}

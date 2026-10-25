@@ -33,6 +33,12 @@ export const routes: Routes = [
         loadChildren: () => import('./features/deudas/deudas.routes').then((m) => m.DEUDAS_ROUTES),
       },
       {
+        path: 'incidencias',
+        canActivate: [authGuard],
+        loadChildren: () =>
+          import('./features/incidencias/incidencias.routes').then((m) => m.INCIDENCIAS_ROUTES),
+      },
+      {
         path: 'club',
         canActivate: [authGuard],
         loadChildren: () => import('./features/club/club.routes').then((m) => m.CLUB_ROUTES),

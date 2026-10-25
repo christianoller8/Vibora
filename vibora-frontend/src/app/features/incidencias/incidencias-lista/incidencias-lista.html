@@ -1,0 +1,139 @@
+<div class="cabecera">
+  <h1>Incidencias</h1>
+  @if (clubId() !== null) {
+    <a
+      mat-flat-button
+      data-accion="reportar"
+      routerLink="/incidencias/nueva"
+      [queryParams]="{ club: clubId() }"
+    >
+      <mat-icon aria-hidden="true">add</mat-icon>
+      Reportar incidencia
+    </a>
+  }
+</div>
+
+@if (cargandoClubes()) {
+  <mat-spinner diameter="40" aria-label="Cargando clubes" />
+} @else if (errorClubes(); as mensaje) {
+  <p class="error" role="alert">{{ mensaje }}</p>
+} @else if (clubes().length === 0) {
+  <p class="vacio">
+    Todavía no hay clubes disponibles. Cuando un club se dé de alta podrás reportar sus incidencias
+    desde aquí.
+  </p>
+} @else {
+  <div class="filtros">
+    <mat-form-field appearance="outline">
+      <mat-label>Club</mat-label>
+      <select matNativeControl data-campo="club" (change)="elegirClub(valorDe($event))">
+        @for (club of clubes(); track club.id) {
+          <option [value]="club.id" [selected]="club.id === clubId()">{{ club.nombre }}</option>
+        }
+      </select>
+    </mat-form-field>
+
+    @if (esAdminDelClub()) {
+      <mat-form-field appearance="outline">
+        <mat-label>Pista</mat-label>
+        <select matNativeControl data-campo="pista" (change)="elegirPista(valorDe($event))">
+          <option value="" [selected]="pistaId() === null">Todas</option>
+          @for (pista of pistas(); track pista.id) {
+            <option [value]="pista.id" [selected]="pista.id === pistaId()">
+              {{ pista.nombre }}
+            </option>
+          }
+        </select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Asignación</mat-label>
+        <select
+          matNativeControl
+          data-campo="asignacion"
+          (change)="elegirAsignacion(valorDe($event))"
+        >
+          <option value="" [selected]="asignacion() === ''">Todas</option>
+          <option [value]="sinAsignar" [selected]="asignacion() === sinAsignar">Sin asignar</option>
+          @for (persona of mantenimiento(); track persona.usuarioId) {
+            <option
+              [value]="persona.usuarioId"
+              [selected]="asignacion() === '' + persona.usuarioId"
+            >
+              {{ nombreCompleto(persona) }}
+            </option>
+          }
+        </select>
+      </mat-form-field>
+    }
+  </div>
+
+  <mat-chip-listbox
+    #filtroEstado
+    class="estados"
+    aria-label="Filtrar por estado"
+    [value]="estado() ?? 'TODAS'"
+    (change)="elegirEstado($event.value, filtroEstado)"
+  >
+    <mat-chip-option value="TODAS">Todas</mat-chip-option>
+    @for (e of estados; track e) {
+      <mat-chip-option [value]="e">{{ etiquetaEstado[e] }}</mat-chip-option>
+    }
+  </mat-chip-listbox>
+
+  @if (cargando()) {
+    <mat-spinner diameter="40" aria-label="Cargando incidencias" />
+  } @else if (error(); as mensaje) {
+    <p class="error" role="alert">{{ mensaje }}</p>
+    <button mat-button type="button" data-accion="reintentar" (click)="cargar()">Reintentar</button>
+  } @else if (visibles().length === 0) {
+    <p class="vacio">{{ mensajeVacio() }}</p>
+  } @else {
+    <ul class="incidencias" aria-label="Incidencias del club">
+      @for (incidencia of visibles(); track incidencia.id) {
+        <li class="incidencia">
+          <div class="datos">
+            <a class="titulo" [routerLink]="['/incidencias', incidencia.id]">{{
+              incidencia.titulo
+            }}</a>
+            <span class="detalles">
+              <span class="categoria">{{ etiquetaCategoria[incidencia.categoria] }}</span>
+              ·
+              <span class="pista">{{ incidencia.pistaNombre ?? 'Sin pista concreta' }}</span>
+              ·
+              <span class="fecha" [title]="exacta(incidencia.creadaEn)">{{
+                relativa(incidencia.creadaEn)
+              }}</span>
+            </span>
+            @if (incidencia.asignadaA; as responsable) {
+              <span class="responsable">Responsable: {{ responsable.nombre }}</span>
+            }
+          </div>
+          <app-insignia
+            data-tipo="prioridad"
+            [texto]="etiquetaPrioridad[incidencia.prioridad]"
+            [variante]="'prioridad-' + incidencia.prioridad.toLowerCase()"
+          />
+          <app-insignia
+            data-tipo="estado"
+            [texto]="etiquetaEstado[incidencia.estado]"
+            [variante]="'estado-' + incidencia.estado.toLowerCase()"
+          />
+        </li>
+      }
+    </ul>
+
+    @if (hayMas()) {
+      <button
+        mat-stroked-button
+        type="button"
+        class="mas"
+        data-accion="mas"
+        [disabled]="cargandoMas()"
+        (click)="cargarMas()"
+      >
+        {{ cargandoMas() ? 'Cargando…' : 'Cargar más' }}
+      </button>
+    }
+  }
+}

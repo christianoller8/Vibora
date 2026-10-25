@@ -1,0 +1,272 @@
+<a mat-button class="volver" routerLink="/incidencias">
+  <mat-icon aria-hidden="true">arrow_back</mat-icon>
+  Volver a incidencias
+</a>
+
+@if (cargando()) {
+  <mat-spinner diameter="40" aria-label="Cargando la incidencia" />
+} @else if (error(); as mensaje) {
+  <p class="error" role="alert">{{ mensaje }}</p>
+  @if (idValido()) {
+    <button mat-button type="button" data-accion="reintentar" (click)="cargar()">Reintentar</button>
+  }
+} @else if (incidencia(); as i) {
+  <header class="cabecera">
+    <h1>{{ i.titulo }}</h1>
+    <div class="insignias">
+      <app-insignia
+        data-tipo="estado"
+        [texto]="etiquetaEstado[i.estado]"
+        [variante]="'estado-' + i.estado.toLowerCase()"
+      />
+      <app-insignia
+        data-tipo="prioridad"
+        [texto]="etiquetaPrioridad[i.prioridad]"
+        [variante]="'prioridad-' + i.prioridad.toLowerCase()"
+      />
+    </div>
+  </header>
+
+  @if (bloqueo(); as b) {
+    <div class="bloqueo-caja">
+      <p class="bloqueo" role="status">
+        <mat-icon aria-hidden="true">block</mat-icon>
+        <span>{{ textoBloqueo(b) }}</span>
+      </p>
+      @if (puedeGestionarBloqueo()) {
+        <div
+          class="acciones-bloqueo"
+          role="group"
+          aria-label="Acciones sobre el bloqueo de la pista"
+        >
+          <button
+            mat-stroked-button
+            type="button"
+            data-accion="ver-afectadas"
+            [disabled]="accionesBloqueo.ocupado()"
+            (click)="verAfectadas()"
+          >
+            Ver afectadas
+          </button>
+          <button
+            mat-stroked-button
+            type="button"
+            data-accion="cancelar-afectadas"
+            [disabled]="accionesBloqueo.ocupado()"
+            (click)="cancelarAfectadas()"
+          >
+            Cancelar afectadas
+          </button>
+          <button
+            mat-stroked-button
+            type="button"
+            data-accion="levantar-bloqueo"
+            [attr.aria-label]="'Levantar bloqueo de ' + (i.pistaNombre ?? 'la pista')"
+            [disabled]="accionesBloqueo.ocupado()"
+            (click)="levantarBloqueo()"
+          >
+            Levantar bloqueo
+          </button>
+        </div>
+      }
+    </div>
+  }
+
+  <dl class="meta">
+    <div>
+      <dt>Categoría</dt>
+      <dd>{{ etiquetaCategoria[i.categoria] }}</dd>
+    </div>
+    <div>
+      <dt>Pista</dt>
+      <dd>{{ i.pistaNombre ?? 'Sin pista concreta' }}</dd>
+    </div>
+    @if (clubNombre(); as club) {
+      <div>
+        <dt>Club</dt>
+        <dd>{{ club }}</dd>
+      </div>
+    }
+    <div>
+      <dt>Reportada por</dt>
+      <dd>{{ i.reportadaPor.nombre }}</dd>
+    </div>
+    <div>
+      <dt>Responsable</dt>
+      <dd>{{ i.asignadaA?.nombre ?? 'Sin asignar' }}</dd>
+    </div>
+    <div>
+      <dt>Creada</dt>
+      <dd>{{ exacta(i.creadaEn) }}</dd>
+    </div>
+    <div>
+      <dt>Última actualización</dt>
+      <dd>{{ exacta(i.actualizadaEn) }}</dd>
+    </div>
+    @if (i.resueltaEn; as resuelta) {
+      <div>
+        <dt>Resuelta</dt>
+        <dd>{{ exacta(resuelta) }}</dd>
+      </div>
+    }
+  </dl>
+
+  <section class="bloque" aria-labelledby="titulo-descripcion">
+    <h2 id="titulo-descripcion">Descripción</h2>
+    <p class="descripcion">{{ i.descripcion }}</p>
+  </section>
+
+  @if (acciones().length > 0) {
+    <section class="acciones" aria-label="Acciones sobre la incidencia">
+      @for (accion of acciones(); track accion) {
+        <button
+          mat-stroked-button
+          type="button"
+          [attr.data-accion]="accion.toLowerCase()"
+          (click)="ejecutar(accion)"
+        >
+          {{ etiquetaAccion(accion) }}
+        </button>
+      }
+    </section>
+  }
+
+  @if (puedeBloquear()) {
+    <div class="acciones-bloqueo" role="group" aria-label="Bloqueo de la pista">
+      <button
+        mat-stroked-button
+        type="button"
+        data-accion="bloquear-pista"
+        [attr.aria-label]="'Bloquear pista (' + i.pistaNombre + ') por esta incidencia'"
+        [disabled]="bloqueando()"
+        (click)="bloquearPista()"
+      >
+        <mat-icon aria-hidden="true">block</mat-icon>
+        {{ bloqueando() ? 'Bloqueando…' : 'Bloquear pista' }}
+      </button>
+    </div>
+  }
+
+  <section class="bloque" aria-labelledby="titulo-fotos">
+    <h2 id="titulo-fotos">Fotos</h2>
+    @if (i.fotos.length > 0) {
+      <ul class="fotos" aria-label="Fotos de la incidencia">
+        @for (foto of i.fotos; track foto.id; let indice = $index) {
+          <li class="foto">
+            <app-foto-miniatura [incidenciaId]="i.id" [foto]="foto" />
+            <button
+              type="button"
+              class="abrir"
+              data-accion="abrir-foto"
+              [attr.aria-label]="'Ver la foto ' + foto.nombreOriginal"
+              (click)="abrirFoto(indice)"
+            ></button>
+            @if (puedeEliminarFoto(foto)) {
+              <button
+                mat-icon-button
+                type="button"
+                class="eliminar"
+                data-accion="eliminar-foto"
+                [attr.aria-label]="'Eliminar la foto ' + foto.nombreOriginal"
+                (click)="eliminarFoto(foto)"
+              >
+                <mat-icon aria-hidden="true">delete</mat-icon>
+              </button>
+            }
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="vacio">Esta incidencia no tiene fotos.</p>
+    }
+
+    @if (puedeAnadirFotos()) {
+      <div class="anadir">
+        <input
+          #entradaFoto
+          type="file"
+          hidden
+          multiple
+          data-campo="foto"
+          [accept]="aceptarFotos"
+          (change)="alElegirFotos($event)"
+        />
+        <button
+          mat-stroked-button
+          type="button"
+          data-accion="anadir-foto"
+          [disabled]="subiendoFotos()"
+          (click)="entradaFoto.click()"
+        >
+          <mat-icon aria-hidden="true">add_a_photo</mat-icon>
+          {{ subiendoFotos() ? 'Subiendo…' : 'Añadir fotos' }}
+        </button>
+        <span class="cupo">{{ i.fotos.length }} de {{ maxFotos }} fotos</span>
+      </div>
+    }
+    @if (erroresFotos().length > 0) {
+      <ul class="errores-fotos" role="alert">
+        @for (mensaje of erroresFotos(); track $index) {
+          <li>{{ mensaje }}</li>
+        }
+      </ul>
+    }
+  </section>
+
+  <section class="bloque comentar" aria-labelledby="titulo-comentar">
+    <h2 id="titulo-comentar">Comentar</h2>
+    @if (puedeComentar()) {
+      <form [formGroup]="formComentario" (ngSubmit)="comentar()" novalidate>
+        <mat-form-field appearance="outline">
+          <mat-label>Añadir un comentario</mat-label>
+          <textarea matInput name="comentario" formControlName="comentario" rows="3"></textarea>
+          <mat-hint align="end">{{ comentario.value.length }}/2000</mat-hint>
+        </mat-form-field>
+        <button
+          mat-flat-button
+          type="submit"
+          data-accion="comentar"
+          [disabled]="comentario.invalid || comentando()"
+        >
+          {{ comentando() ? 'Enviando…' : 'Comentar' }}
+        </button>
+      </form>
+      @if (errorComentario(); as mensaje) {
+        <p class="error" role="alert">{{ mensaje }}</p>
+      }
+    } @else {
+      <p class="vacio">
+        Esta incidencia está {{ etiquetaEstado[i.estado].toLowerCase() }}: ya no admite comentarios.
+      </p>
+    }
+  </section>
+
+  <section class="bloque" aria-labelledby="titulo-historial">
+    <h2 id="titulo-historial">Historial</h2>
+    <ol class="eventos">
+      @for (evento of i.eventos; track evento.id) {
+        <li class="evento">
+          <mat-icon aria-hidden="true">{{ iconoDe(evento.tipo) }}</mat-icon>
+          <div class="cuerpo">
+            <p class="quien">
+              <span class="actor">{{ evento.usuario.nombre }}</span>
+              {{ fraseDe(evento.tipo) }}
+            </p>
+            @if (cambio(evento); as texto) {
+              <p class="cambio">{{ texto }}</p>
+            }
+            @if (evento.texto) {
+              <p class="texto">{{ evento.texto }}</p>
+            }
+            <time
+              class="cuando"
+              [attr.datetime]="evento.creadoEn"
+              [attr.title]="exacta(evento.creadoEn)"
+              >{{ relativa(evento.creadoEn) }}</time
+            >
+          </div>
+        </li>
+      }
+    </ol>
+  </section>
+}

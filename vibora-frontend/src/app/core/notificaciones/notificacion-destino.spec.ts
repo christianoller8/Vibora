@@ -1,14 +1,14 @@
 import { TipoNotificacion } from '../../shared/models/notificacion.model';
 import { destinoNotificacion } from './notificacion-destino';
 
-const TIPOS_PERSONAL_E_INCIDENCIAS = [
-  'PERSONAL_ANADIDO',
-  'PERSONAL_QUITADO',
+const TIPOS_PERSONAL: TipoNotificacion[] = ['PERSONAL_ANADIDO', 'PERSONAL_QUITADO'];
+
+const TIPOS_INCIDENCIA: TipoNotificacion[] = [
   'INCIDENCIA_NUEVA',
   'INCIDENCIA_ASIGNADA',
   'INCIDENCIA_ESTADO',
   'INCIDENCIA_COMENTARIO',
-] as TipoNotificacion[];
+];
 
 const TODOS_LOS_TIPOS: TipoNotificacion[] = [
   'JUGADOR_SE_APUNTO',
@@ -18,7 +18,8 @@ const TODOS_LOS_TIPOS: TipoNotificacion[] = [
   'PAGO_RECIBIDO',
   'RESERVA_CANCELADA',
   'FACTURA_RECTIFICATIVA',
-  ...TIPOS_PERSONAL_E_INCIDENCIAS,
+  ...TIPOS_PERSONAL,
+  ...TIPOS_INCIDENCIA,
 ];
 
 describe('destinoNotificacion', () => {
@@ -48,8 +49,13 @@ describe('destinoNotificacion', () => {
     expect(ruta.startsWith('/')).toBe(true);
   });
 
-  it.each(TIPOS_PERSONAL_E_INCIDENCIAS)('%s lleva a /agenda', (tipo) => {
+  it.each(TIPOS_PERSONAL)('%s lleva a /agenda', (tipo) => {
     expect(destinoNotificacion(tipo)).toBe('/agenda');
+  });
+
+  // La notificación no trae el id de la incidencia, así que se lleva al listado (no al detalle).
+  it.each(TIPOS_INCIDENCIA)('%s lleva al listado /incidencias', (tipo) => {
+    expect(destinoNotificacion(tipo)).toBe('/incidencias');
   });
 
   it('un tipo desconocido de un backend más nuevo cae en /agenda', () => {

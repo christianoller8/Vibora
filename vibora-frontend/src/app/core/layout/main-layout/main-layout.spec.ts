@@ -67,6 +67,16 @@ describe('MainLayout', () => {
     expect(enlaces.some((t) => t?.includes('Mis reservas'))).toBe(true);
   });
 
+  it('muestra Incidencias a todo usuario autenticado, también a un jugador sin club', async () => {
+    await crear(crearAuthFalso(USUARIO_JUGADOR));
+
+    const enlace = Array.from(el().querySelectorAll<HTMLAnchorElement>('a[mat-list-item]')).find(
+      (a) => a.getAttribute('href') === '/incidencias',
+    );
+    expect(enlace?.textContent).toContain('Incidencias');
+    expect(enlace?.querySelector('mat-icon')?.textContent?.trim()).toBe('report_problem');
+  });
+
   it('muestra también Partidos y Deudas, con sus iconos y rutas', async () => {
     await crear(crearAuthFalso());
 
@@ -81,6 +91,7 @@ describe('MainLayout', () => {
       '/mis-reservas',
       '/partidos',
       '/deudas',
+      '/incidencias',
       '/club/crear',
     ]);
   });
