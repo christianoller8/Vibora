@@ -1,0 +1,22 @@
+@let e = estado();
+@if (e.tipo === 'lista') {
+  <img [src]="e.url" [alt]="'Foto de la incidencia: ' + foto().nombreOriginal" />
+} @else if (e.tipo === 'cargando') {
+  <div class="hueco">
+    <mat-spinner diameter="28" [attr.aria-label]="'Cargando la foto ' + foto().nombreOriginal" />
+  </div>
+} @else {
+  <div class="hueco error">
+    <span>No se pudo cargar la foto</span>
+    <button
+      mat-button
+      type="button"
+      class="reintentar"
+      data-accion="reintentar"
+      [attr.aria-label]="'Reintentar cargar la foto ' + foto().nombreOriginal"
+      (click)="reintentar()"
+    >
+      Reintentar
+    </button>
+  </div>
+}

@@ -1,0 +1,38 @@
+<h2 mat-dialog-title>{{ foto().nombreOriginal }}</h2>
+
+<mat-dialog-content>
+  <app-foto-miniatura [incidenciaId]="datos.incidenciaId" [foto]="foto()" [ampliada]="true" />
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  @if (datos.fotos.length > 1) {
+    <button
+      mat-icon-button
+      type="button"
+      data-accion="anterior"
+      aria-label="Foto anterior"
+      (click)="anterior()"
+    >
+      <mat-icon aria-hidden="true">chevron_left</mat-icon>
+    </button>
+    <span class="posicion" aria-live="polite">{{ indice() + 1 }} de {{ datos.fotos.length }}</span>
+    <button
+      mat-icon-button
+      type="button"
+      data-accion="siguiente"
+      aria-label="Foto siguiente"
+      (click)="siguiente()"
+    >
+      <mat-icon aria-hidden="true">chevron_right</mat-icon>
+    </button>
+  }
+  <button
+    mat-button
+    type="button"
+    data-accion="cerrar"
+    aria-label="Cerrar el visor de fotos"
+    (click)="cerrar()"
+  >
+    Cerrar
+  </button>
+</mat-dialog-actions>

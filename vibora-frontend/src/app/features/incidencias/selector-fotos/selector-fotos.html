@@ -1,0 +1,55 @@
+<div class="selector">
+  <input
+    #entrada
+    type="file"
+    hidden
+    multiple
+    data-campo="fotos"
+    [accept]="aceptar"
+    (change)="alElegir($event)"
+  />
+
+  <div class="barra">
+    <button
+      mat-stroked-button
+      type="button"
+      data-accion="elegir"
+      [disabled]="deshabilitado() || lleno()"
+      (click)="entrada.click()"
+    >
+      <mat-icon aria-hidden="true">add_a_photo</mat-icon>
+      Añadir fotos
+    </button>
+    <span class="contador" aria-live="polite">
+      {{ archivos().length }} de {{ maximo }} fotos · JPEG, PNG o WebP, hasta 5 MB cada una
+    </span>
+  </div>
+
+  @if (errores().length > 0) {
+    <ul class="errores" role="alert">
+      @for (error of errores(); track error) {
+        <li>{{ error }}</li>
+      }
+    </ul>
+  }
+
+  @if (archivos().length > 0) {
+    <ul class="miniaturas" aria-label="Fotos elegidas">
+      @for (archivo of archivos(); track archivo) {
+        <li class="miniatura">
+          <img [src]="urlDe(archivo)" [alt]="'Vista previa de ' + archivo.name" />
+          <button
+            mat-icon-button
+            type="button"
+            data-accion="quitar"
+            [attr.aria-label]="'Quitar la foto ' + archivo.name"
+            [disabled]="deshabilitado()"
+            (click)="quitar(archivo)"
+          >
+            <mat-icon aria-hidden="true">close</mat-icon>
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</div>
